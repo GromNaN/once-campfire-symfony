@@ -21,8 +21,6 @@ use Symfony\Component\HttpFoundation\RedirectResponse;
  */
 abstract class AbstractRoomController extends AbstractController
 {
-    public const DEFAULT_ROOM_NAME = 'New room';
-
     public function __construct(
         protected readonly RoomManager $roomManager,
         protected readonly UserRepository $users,

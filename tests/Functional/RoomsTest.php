@@ -57,6 +57,25 @@ final class RoomsTest extends DatabaseTestCase
         self::assertStringContainsString('Bob', $crawler->filter('.room-access')->text());
     }
 
+    /**
+     * The name field starts empty so the page shows the hint the reader types
+     * over, rather than a value they would have to clear first.
+     */
+    public function testTheRoomNameStartsEmptyAndShowsItsPlaceholder(): void
+    {
+        $this->runFirstRun();
+
+        foreach (['/rooms/opens/new', '/rooms/closeds/new'] as $path) {
+            $crawler = $this->client->request('GET', $path);
+            self::assertResponseIsSuccessful();
+
+            $input = $crawler->filter('input[name="room[name]"]');
+            self::assertCount(1, $input, $path.' shows the name field.');
+            self::assertSame('', (string) $input->attr('value'), $path.' starts the name empty.');
+            self::assertSame('Name the room', $input->attr('placeholder'), $path.' shows the hint.');
+        }
+    }
+
     public function testAClosedRoomIsCreatedThroughTheForm(): void
     {
         $this->runFirstRun();

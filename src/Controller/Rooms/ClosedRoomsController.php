@@ -43,11 +43,10 @@ final class ClosedRoomsController extends AbstractRoomController
     #[IsGranted(CreateRoomVoter::CAN_CREATE_ROOMS)]
     public function new(): Response
     {
-        $data = new RoomData();
-        $data->name = self::DEFAULT_ROOM_NAME;
-
+        // The field starts empty so the page shows its placeholder. A name is
+        // still required: the form asks for one when it is submitted empty.
         return $this->render('rooms/closeds/new.html.twig', [
-            'form' => $this->createForm(RoomType::class, $data, $this->formOptions('rooms_closed_create')),
+            'form' => $this->createForm(RoomType::class, new RoomData(), $this->formOptions('rooms_closed_create')),
             ...$this->pageData(),
         ]);
     }
