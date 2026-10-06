@@ -9,7 +9,6 @@ use App\Entity\User;
 use App\Form\AccountUserRoleType;
 use App\Form\Data\AccountUserRoleData;
 use App\Repository\UserRepository;
-use App\Security\Voter\AdministerVoter;
 use App\Service\AccountAdministration;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Request;
@@ -38,7 +37,7 @@ final class UsersController extends AbstractController
     }
 
     #[Route('/account/users/{id}', name: 'account_user_update', methods: ['PATCH'], requirements: ['id' => '\d+'])]
-    #[IsGranted(AdministerVoter::CAN_ADMINISTER)]
+    #[IsGranted('ROLE_ADMIN')]
     public function update(Request $request, int $id, #[CurrentUser] User $currentUser): Response
     {
         $user = $this->member($id);
@@ -58,7 +57,7 @@ final class UsersController extends AbstractController
     }
 
     #[Route('/account/users/{id}', name: 'account_user_deactivate', methods: ['DELETE'], requirements: ['id' => '\d+'])]
-    #[IsGranted(AdministerVoter::CAN_ADMINISTER)]
+    #[IsGranted('ROLE_ADMIN')]
     #[IsCsrfTokenValid('account_user_deactivate', tokenKey: '_csrf_token')]
     public function deactivate(int $id, #[CurrentUser] User $currentUser): Response
     {

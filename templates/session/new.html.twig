@@ -27,7 +27,7 @@
                     <legend class="txt-large txt-align-center"><strong>{{ account_name() }}</strong></legend>
 
                     <div class="flex align-center gap">
-                        {{ translation_button('email_address') }}
+                        <twig:TranslationButton key="email_address" />
                         <label class="flex align-center gap input input--actor txt-large">
                             {{ form_widget(form.emailAddress, { attr: {
                                 class: 'input',
@@ -40,7 +40,7 @@
                     </div>
 
                     <div class="flex align-center gap">
-                        {{ translation_button('password') }}
+                        <twig:TranslationButton key="password" />
                         <label class="flex align-center gap input input--actor txt-large">
                             {{ form_widget(form.password, { attr: {
                                 class: 'input',

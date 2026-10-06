@@ -55,7 +55,7 @@
     {# The stylesheets leave room in the navigation bar for the picture of the
        account, and give an administrator a few things a member does not get,
        so the page says both of them here. #}
-    <body class="{% block body_class %}{% endblock %}{% if is_granted('CAN_ADMINISTER') %} admin{% endif %}{% if account_has_logo() %} account-has-logo{% endif %}" data-controller="local-time lightbox">
+    <body class="{% block body_class %}{% endblock %}{% if is_granted('ROLE_ADMIN') %} admin{% endif %}{% if account_has_logo() %} account-has-logo{% endif %}" data-controller="local-time lightbox">
         {% block stream_source %}{% endblock %}
 
         <a href="#main-content" class="skip-navigation btn">Skip to main content</a>

@@ -50,6 +50,7 @@ final class PushSubscriptionsController extends AbstractController
      * kept and touched rather than stored a second time.
      */
     #[Route('/users/me/push_subscriptions', name: 'push_subscriptions_create', methods: ['POST'])]
+    #[IsCsrfTokenValid('push_subscriptions_create', tokenKey: '_csrf_token')]
     public function create(
         #[MapRequestPayload(acceptFormat: 'json')] PushSubscriptionData $data,
         #[CurrentUser] User $user,

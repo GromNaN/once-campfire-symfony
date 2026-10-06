@@ -8,8 +8,13 @@ use App\Entity\Session;
 use App\Entity\User;
 use App\Repository\SessionRepository;
 use Doctrine\ORM\EntityManagerInterface;
+use Symfony\Component\Clock\ClockInterface;
+use Symfony\Component\DependencyInjection\Attribute\Autowire;
+use Symfony\Component\EventDispatcher\Attribute\AsEventListener;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
+use Symfony\Component\HttpKernel\Event\RequestEvent;
+use Symfony\Component\HttpKernel\KernelEvents;
 use Symfony\Component\Security\Core\Authentication\Token\Storage\TokenStorageInterface;
 
 /**
@@ -23,10 +28,24 @@ final class SessionManager
 {
     private const RETURN_TO_KEY = 'campfire.return_to';
 
+    /**
+     * How long a device may stay untouched before it is signed out, when the
+     * framework session cookie has no lifetime of its own.
+     */
+    private const DEFAULT_IDLE_TIMEOUT = 1209600;
+
+    /**
+     * How long a device may stay signed in at all, however often it is used.
+     */
+    private const ABSOLUTE_TIMEOUT = 2592000;
+
     public function __construct(
         private readonly SessionRepository $sessions,
         private readonly EntityManagerInterface $entityManager,
         private readonly TokenStorageInterface $tokenStorage,
+        private readonly ClockInterface $clock,
+        #[Autowire(param: 'session.metadata.cookie_lifetime')]
+        private readonly ?int $cookieLifetime = null,
     ) {
     }
 
@@ -37,7 +56,7 @@ final class SessionManager
         $session->setToken(Session::generateToken());
         $session->setUserAgent($request->headers->get('User-Agent'));
         $session->setIpAddress($request->getClientIp());
-        $session->setLastActiveAt(new \DateTimeImmutable('now', new \DateTimeZone('UTC')));
+        $session->setLastActiveAt($this->clock->now());
 
         $this->entityManager->persist($session);
         $this->entityManager->flush();
@@ -67,6 +86,53 @@ final class SessionManager
 
         $request->getSession()->remove(SessionAuthenticator::SESSION_KEY);
         $request->getSession()->invalidate();
+    }
+
+    /**
+     * Signs a device out once it has been idle for too long, or once it has
+     * been signed in for too long, before the firewall authenticates it.
+     *
+     * A browser that presents the session cookie is the only one that pays for
+     * the lookup, so an anonymous visit stays as cheap as it was.
+     */
+    #[AsEventListener(event: KernelEvents::REQUEST, priority: 100)]
+    public function endExpiredSession(RequestEvent $event): void
+    {
+        if (!$event->isMainRequest()) {
+            return;
+        }
+
+        $request = $event->getRequest();
+
+        if (!$request->hasSession() || !$request->cookies->has($request->getSession()->getName())) {
+            return;
+        }
+
+        $session = $this->current($request);
+
+        if (null === $session || !$this->isExpired($session)) {
+            return;
+        }
+
+        $this->entityManager->remove($session);
+        $this->entityManager->flush();
+
+        $request->getSession()->remove(SessionAuthenticator::SESSION_KEY);
+        $this->tokenStorage->setToken(null);
+    }
+
+    /**
+     * Whether a device has been idle for too long, or signed in for too long.
+     */
+    public function isExpired(Session $session): bool
+    {
+        $now = $this->clock->now();
+
+        if ($now->getTimestamp() - $session->getLastActiveAt()->getTimestamp() > $this->idleTimeout()) {
+            return true;
+        }
+
+        return $now->getTimestamp() - $session->getCreatedAt()->getTimestamp() > self::ABSOLUTE_TIMEOUT;
     }
 
     public function current(Request $request): ?Session
@@ -141,5 +207,16 @@ final class SessionManager
     public function deleteCookie(Response $response): void
     {
         $response->headers->clearCookie($this->cookieName());
+    }
+
+    /**
+     * The lifetime of the framework session cookie when it has one, so an idle
+     * device is signed out no later than the cookie disappears.
+     */
+    private function idleTimeout(): int
+    {
+        return null !== $this->cookieLifetime && $this->cookieLifetime > 0
+            ? $this->cookieLifetime
+            : self::DEFAULT_IDLE_TIMEOUT;
     }
 }

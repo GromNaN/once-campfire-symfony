@@ -15,6 +15,7 @@ use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Attribute\Route;
 use Symfony\Component\Security\Http\Attribute\CurrentUser;
+use Symfony\Component\Security\Http\Attribute\IsCsrfTokenValid;
 
 /**
  * Records that a browser is watching a room.
@@ -36,6 +37,7 @@ final class PresenceController extends AbstractController
     }
 
     #[Route('/rooms/{room_id}/presence', name: 'rooms_presence', methods: ['POST'], requirements: ['room_id' => '\d+'])]
+    #[IsCsrfTokenValid('rooms_presence', tokenKey: '_csrf_token')]
     public function create(Request $request, int $room_id, #[CurrentUser] User $user): Response
     {
         $room = $this->rooms->findForUser($room_id, $user);

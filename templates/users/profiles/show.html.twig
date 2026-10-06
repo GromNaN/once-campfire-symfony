@@ -55,7 +55,7 @@
 
             <div class="flex flex-column gap">
                 <div class="flex align-center gap">
-                    {{ translation_button('user_name') }}
+                    <twig:TranslationButton key="user_name" />
 
                     <label class="flex align-center gap flex-item-grow input input--actor">
                         {{ form_widget(form.name, { attr: {
@@ -69,7 +69,7 @@
                 </div>
 
                 <div class="flex align-center gap">
-                    {{ translation_button('email_address') }}
+                    <twig:TranslationButton key="email_address" />
 
                     <label class="flex align-center gap flex-item-grow input input--actor">
                         {{ form_widget(form.emailAddress, { attr: {
@@ -82,7 +82,7 @@
                 </div>
 
                 <div class="flex align-center gap">
-                    {{ translation_button('update_password') }}
+                    <twig:TranslationButton key="update_password" />
 
                     <label class="flex align-center gap flex-item-grow input input--actor">
                         {{ form_widget(form.password, { attr: {
@@ -95,7 +95,7 @@
                 </div>
 
                 <div class="flex align-start gap">
-                    {{ translation_button('bio') }}
+                    <twig:TranslationButton key="bio" />
 
                     <label class="flex align--center gap flex-item--grow input input--actor">
                         {{ form_widget(form.bio, { attr: {

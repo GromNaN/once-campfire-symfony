@@ -14,7 +14,7 @@
 
             <div class="flex align-center gap">
                 <div class="system-welcome--translation">
-                    {{ translation_button('invite_message') }}
+                    <twig:TranslationButton key="invite_message" />
                 </div>
 
                 <p>
@@ -23,7 +23,7 @@
                 </p>
             </div>
 
-            {{ include('accounts/_invite.html.twig', { join_url: join_url(), can_administer: is_granted('CAN_ADMINISTER') }) }}
+            {{ include('accounts/_invite.html.twig', { join_url: join_url(), can_administer: is_granted('ROLE_ADMIN') }) }}
         </div>
     </div>
 </div>

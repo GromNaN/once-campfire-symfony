@@ -15,10 +15,21 @@ framework:
         # and handed to the page by the server.
         stateless_token_ids:
             - submit
-            - authenticate
             - logout
             - room_destroy
             - rooms_involvement
             - user_avatar_destroy
             - searches_clear
             - messages_boosts_destroy
+            - account_bot_destroy
+            - account_bot_key_update
+            - account_join_code_create
+            - account_logo_destroy
+            - account_user_deactivate
+            - push_subscriptions_destroy
+            - push_subscriptions_create
+            - push_subscription_test_notifications_create
+            - user_ban
+            - rooms_typing
+            - rooms_presence
+            - unfurl_link

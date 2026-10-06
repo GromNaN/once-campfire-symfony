@@ -1,4 +1,5 @@
 import { Controller } from "@hotwired/stimulus"
+import { csrfToken } from "../helpers/csrf_token.js"
 
 // Turns notifications on for the room the reader is looking at.
 //
@@ -65,7 +66,7 @@ export default class extends Controller {
     const response = await fetch(this.subscriptionsUrlValue, {
       method: "POST",
       headers: { "Content-Type": "application/json", "Accept": "application/json" },
-      body: JSON.stringify({ endpoint, p256dh_key: p256dh, auth_key: auth })
+      body: JSON.stringify({ endpoint, p256dh_key: p256dh, auth_key: auth, _csrf_token: csrfToken() })
     })
 
     if (!response.ok) await subscription.unsubscribe()

@@ -221,14 +221,7 @@ final class PushTest extends DatabaseTestCase
     {
         $this->runFirstRun();
 
-        $this->client->request('POST', '/users/me/push_subscriptions', [], [], [
-            'CONTENT_TYPE' => 'application/json',
-            'HTTP_USER_AGENT' => 'Test browser',
-        ], json_encode([
-            'endpoint' => self::ENDPOINT,
-            'p256dh_key' => self::P256DH,
-            'auth_key' => self::AUTH,
-        ], \JSON_THROW_ON_ERROR));
+        $this->registerDevice();
 
         self::assertResponseIsSuccessful();
 
@@ -243,18 +236,13 @@ final class PushTest extends DatabaseTestCase
     public function testRegisteringTheSameDeviceTwiceKeepsOneRow(): void
     {
         $this->runFirstRun();
-        $body = json_encode([
-            'endpoint' => self::ENDPOINT,
-            'p256dh_key' => self::P256DH,
-            'auth_key' => self::AUTH,
-        ], \JSON_THROW_ON_ERROR);
 
         // A browser registers again on every visit, so the second call must
         // not leave a second row behind.
-        $this->client->request('POST', '/users/me/push_subscriptions', [], [], ['CONTENT_TYPE' => 'application/json'], $body);
+        $this->registerDevice();
         self::assertResponseIsSuccessful();
 
-        $this->client->request('POST', '/users/me/push_subscriptions', [], [], ['CONTENT_TYPE' => 'application/json'], $body);
+        $this->registerDevice();
         self::assertResponseIsSuccessful();
 
         self::assertCount(1, $this->entityManager()->getRepository(PushSubscription::class)->findAll());
@@ -269,13 +257,7 @@ final class PushTest extends DatabaseTestCase
         // row is not touched and the browser is told.
         $this->subscribe($this->findUser('alice@example.com'), 'https://attacker.example.com/steal');
 
-        $this->client->request('POST', '/users/me/push_subscriptions', [], [], [
-            'CONTENT_TYPE' => 'application/json',
-        ], json_encode([
-            'endpoint' => 'https://attacker.example.com/steal',
-            'p256dh_key' => self::P256DH,
-            'auth_key' => self::AUTH,
-        ], \JSON_THROW_ON_ERROR));
+        $this->registerDevice(['endpoint' => 'https://attacker.example.com/steal']);
 
         self::assertResponseStatusCodeSame(422);
         self::assertCount(1, $this->entityManager()->getRepository(PushSubscription::class)->findAll());
@@ -285,13 +267,7 @@ final class PushTest extends DatabaseTestCase
     {
         $this->runFirstRun();
 
-        $this->client->request('POST', '/users/me/push_subscriptions', [], [], [
-            'CONTENT_TYPE' => 'application/json',
-        ], json_encode([
-            'endpoint' => 'https://example.com/push/1',
-            'p256dh_key' => self::P256DH,
-            'auth_key' => self::AUTH,
-        ], \JSON_THROW_ON_ERROR));
+        $this->registerDevice(['endpoint' => 'https://example.com/push/1']);
 
         self::assertResponseStatusCodeSame(422);
         self::assertCount(0, $this->entityManager()->getRepository(PushSubscription::class)->findAll());
@@ -476,6 +452,27 @@ final class PushTest extends DatabaseTestCase
         }
 
         return $container->get(MessageWriter::class)->create($room, $creator, $body);
+    }
+
+    /**
+     * Registers a device the way the browser does, with a fresh CSRF token so
+     * the stateless protection accepts the call.
+     *
+     * @param array<string, string> $overrides
+     */
+    private function registerDevice(array $overrides = []): void
+    {
+        $payload = $overrides + [
+            'endpoint' => self::ENDPOINT,
+            'p256dh_key' => self::P256DH,
+            'auth_key' => self::AUTH,
+        ];
+        $payload['_csrf_token'] = $this->csrfToken('push_subscriptions_create');
+
+        $this->client->request('POST', '/users/me/push_subscriptions', [], [], [
+            'CONTENT_TYPE' => 'application/json',
+            'HTTP_USER_AGENT' => 'Test browser',
+        ], json_encode($payload, \JSON_THROW_ON_ERROR));
     }
 
     private function subscribe(User $user, string $endpoint = self::ENDPOINT): PushSubscription

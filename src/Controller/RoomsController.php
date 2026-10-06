@@ -18,6 +18,7 @@ use App\Repository\RoomRepository;
 use App\Security\Voter\AdministerVoter;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
+use Symfony\Component\Clock\ClockInterface;
 use Symfony\Component\HttpFoundation\Cookie;
 use Symfony\Component\HttpFoundation\RedirectResponse;
 use Symfony\Component\HttpFoundation\Response;
@@ -34,6 +35,7 @@ final class RoomsController extends AbstractController
         private readonly MessageBody $body,
         private readonly EntityManagerInterface $entityManager,
         private readonly RemoveMessage $removeMessage,
+        private readonly ClockInterface $clock,
     ) {
     }
 
@@ -123,7 +125,7 @@ final class RoomsController extends AbstractController
         // The next visit returns the visitor to this room.
         $response->headers->setCookie(
             Cookie::create(LastRoom::COOKIE, (string) $room->getId())
-                ->withExpires(time() + LastRoom::LIFETIME)
+                ->withExpires($this->clock->now()->getTimestamp() + LastRoom::LIFETIME)
                 ->withPath('/')
                 ->withSameSite(Cookie::SAMESITE_LAX),
         );

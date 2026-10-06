@@ -13,7 +13,6 @@ use App\Form\BotType;
 use App\Form\Data\BotData;
 use App\Repository\MembershipRepository;
 use App\Repository\UserRepository;
-use App\Security\Voter\AdministerVoter;
 use App\Service\BotSetup;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\File\UploadedFile;
@@ -45,7 +44,7 @@ final class BotsController extends AbstractController
     }
 
     #[Route('/account/bots', name: 'account_bots_index', methods: ['GET'])]
-    #[IsGranted(AdministerVoter::CAN_ADMINISTER)]
+    #[IsGranted('ROLE_ADMIN')]
     public function index(): Response
     {
         $bots = [];
@@ -62,7 +61,7 @@ final class BotsController extends AbstractController
     }
 
     #[Route('/account/bots/new', name: 'account_bot_new', methods: ['GET'])]
-    #[IsGranted(AdministerVoter::CAN_ADMINISTER)]
+    #[IsGranted('ROLE_ADMIN')]
     public function new(): Response
     {
         return $this->render('accounts/bots/new.html.twig', [
@@ -71,7 +70,7 @@ final class BotsController extends AbstractController
     }
 
     #[Route('/account/bots', name: 'account_bots_create', methods: ['POST'])]
-    #[IsGranted(AdministerVoter::CAN_ADMINISTER)]
+    #[IsGranted('ROLE_ADMIN')]
     public function create(Request $request): Response
     {
         $form = $this->createForm(BotType::class, $data = new BotData(), $this->formOptions('account_bots_create'));
@@ -88,7 +87,7 @@ final class BotsController extends AbstractController
     }
 
     #[Route('/account/bots/{id}/edit', name: 'account_bot_edit', methods: ['GET'], requirements: ['id' => '\d+'])]
-    #[IsGranted(AdministerVoter::CAN_ADMINISTER)]
+    #[IsGranted('ROLE_ADMIN')]
     public function edit(int $id): Response
     {
         $bot = $this->bot($id);
@@ -100,7 +99,7 @@ final class BotsController extends AbstractController
     }
 
     #[Route('/account/bots/{id}', name: 'account_bot_update', methods: ['PUT', 'PATCH'], requirements: ['id' => '\d+'])]
-    #[IsGranted(AdministerVoter::CAN_ADMINISTER)]
+    #[IsGranted('ROLE_ADMIN')]
     public function update(Request $request, int $id): Response
     {
         $bot = $this->bot($id);
@@ -118,7 +117,7 @@ final class BotsController extends AbstractController
     }
 
     #[Route('/account/bots/{id}', name: 'account_bot_destroy', methods: ['DELETE'], requirements: ['id' => '\d+'])]
-    #[IsGranted(AdministerVoter::CAN_ADMINISTER)]
+    #[IsGranted('ROLE_ADMIN')]
     #[IsCsrfTokenValid('account_bot_destroy', tokenKey: '_csrf_token')]
     public function destroy(int $id): Response
     {

@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Opengraph;
 
+use Symfony\Component\DependencyInjection\Attribute\Target;
 use Symfony\Contracts\HttpClient\Exception\ExceptionInterface as HttpException;
 use Symfony\Contracts\HttpClient\HttpClientInterface;
 use Symfony\Contracts\HttpClient\ResponseInterface;
@@ -26,8 +27,10 @@ final class Fetcher
     private const DOCUMENT_CONTENT_TYPE = 'text/html';
     private const TIMEOUT = 5;
 
-    public function __construct(private readonly HttpClientInterface $client)
-    {
+    public function __construct(
+        #[Target('app.opengraph.http_client')]
+        private readonly HttpClientInterface $client,
+    ) {
     }
 
     /**

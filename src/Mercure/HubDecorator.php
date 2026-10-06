@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Mercure;
 
+use Symfony\Component\DependencyInjection\Attribute\Autowire;
 use Symfony\Component\Mercure\Hub;
 use Symfony\Component\Mercure\HubInterface;
 use Symfony\Component\Mercure\Jwt\FactoryTokenProvider;
@@ -31,8 +32,11 @@ final class HubDecorator implements HubInterface
 
     public function __construct(
         private readonly HubInterface $inner,
+        #[Autowire('%env(MERCURE_URL)%')]
         private readonly string $mercureUrl,
+        #[Autowire('%kernel.environment%')]
         private readonly string $environment,
+        #[Autowire(service: 'http_client')]
         private readonly ?HttpClientInterface $httpClient = null,
     ) {
     }

@@ -18,7 +18,6 @@ use App\Form\Data\AccountSettingsData;
 use App\Form\Data\AccountUserRoleData;
 use App\Repository\AccountRepository;
 use App\Repository\UserRepository;
-use App\Security\Voter\AdministerVoter;
 use App\Service\AccountAdministration;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
@@ -98,7 +97,7 @@ final class AccountsController extends AbstractController
     }
 
     #[Route('/account', name: 'account_update', methods: ['PATCH'])]
-    #[IsGranted(AdministerVoter::CAN_ADMINISTER)]
+    #[IsGranted('ROLE_ADMIN')]
     public function update(Request $request): Response
     {
         $account = $this->account();
@@ -120,7 +119,7 @@ final class AccountsController extends AbstractController
     }
 
     #[Route('/account/settings', name: 'account_settings_update', methods: ['PATCH'])]
-    #[IsGranted(AdministerVoter::CAN_ADMINISTER)]
+    #[IsGranted('ROLE_ADMIN')]
     public function updateSettings(Request $request): Response
     {
         $account = $this->account();

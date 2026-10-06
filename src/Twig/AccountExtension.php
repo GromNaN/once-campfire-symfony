@@ -43,16 +43,21 @@ final class AccountExtension
     /**
      * The styles an administrator added, or null when there are none.
      *
-     * They are written into the page as they are, which is what the original
-     * does: the field is only reachable by an administrator, and it is there
-     * precisely so the look of the application can be changed.
+     * They are written into the page as they are, so that the look of the
+     * application can be changed. A sequence that would close the style
+     * element is broken up, which neutralises a value stored before the
+     * validation rule existed without changing any legitimate CSS.
      */
     #[AsTwigFunction('account_custom_styles')]
     public function customStyles(): ?string
     {
         $styles = $this->account()?->getCustomStyles();
 
-        return null === $styles || '' === trim($styles) ? null : $styles;
+        if (null === $styles || '' === trim($styles)) {
+            return null;
+        }
+
+        return str_replace('</', '<\/', $styles);
     }
 
     private function account(): ?Account

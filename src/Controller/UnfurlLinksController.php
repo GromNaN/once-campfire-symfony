@@ -11,6 +11,7 @@ use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Attribute\Route;
+use Symfony\Component\Security\Http\Attribute\IsCsrfTokenValid;
 
 /**
  * Describes the page behind a link someone pasted.
@@ -26,6 +27,7 @@ final class UnfurlLinksController extends AbstractController
     }
 
     #[Route('/unfurl_link', name: 'unfurl_link', methods: ['POST'])]
+    #[IsCsrfTokenValid('unfurl_link', tokenKey: '_csrf_token')]
     public function create(Request $request): Response
     {
         $url = trim($request->getPayload()->getString('url'));

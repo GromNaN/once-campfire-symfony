@@ -326,39 +326,6 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface, Created
     }
 
     /**
-     * A user may administer a record when they are an administrator, when they
-     * created it, or when it has not been saved yet.
-     *
-     * A conversation is the one record where creating it says nothing about who
-     * may administer it: everyone it gathers is on the same footing, so anyone
-     * in it may change it or delete it.
-     */
-    public function canAdminister(?object $record = null): bool
-    {
-        if ($this->isAdministrator()) {
-            return true;
-        }
-
-        if (null === $record) {
-            return false;
-        }
-
-        if (method_exists($record, 'getId') && null === $record->getId()) {
-            return true;
-        }
-
-        if ($record instanceof Room && $record->isDirect()) {
-            return $this->isIn($record);
-        }
-
-        if (method_exists($record, 'getCreator')) {
-            return $this->id === $record->getCreator()?->getId();
-        }
-
-        return false;
-    }
-
-    /**
      * Whether the user is one of the people a room gathers.
      */
     public function isIn(Room $room): bool

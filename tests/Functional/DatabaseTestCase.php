@@ -57,6 +57,12 @@ abstract class DatabaseTestCase extends WebTestCase
         $this->buildSchema(static::getContainer()->get('kernel'));
         $this->truncate($this->connection());
 
+        // A browser announces that its requests are same origin, which is what
+        // the stateless CSRF protection checks first. Without it a test would
+        // have to carry a double-submit token on every call, and mixing the two
+        // checks across requests makes the protection refuse the later ones.
+        $this->client->setServerParameter('HTTP_SEC_FETCH_SITE', 'same-origin');
+
         // The sign in limiter counts attempts per address in a cache the whole
         // suite shares, so without this a test would inherit the attempts of
         // the tests that ran before it.
@@ -100,8 +106,21 @@ abstract class DatabaseTestCase extends WebTestCase
 
     protected function signOut(): void
     {
-        $this->client->request('DELETE', '/session');
+        $this->client->request('DELETE', '/session', ['_csrf_token' => $this->csrfToken('logout')]);
         self::assertResponseRedirects('/');
+    }
+
+    /**
+     * Returns the token a state-changing request has to carry.
+     *
+     * A stateless token is validated from the origin of the request, which the
+     * test client announces on every call, so the value is the placeholder the
+     * manager hands out. A browser adds a double-submit cookie on top; a test
+     * does not, because it runs no script.
+     */
+    protected function csrfToken(string $id): string
+    {
+        return static::getContainer()->get('security.csrf.token_manager')->getToken($id)->getValue();
     }
 
     protected function findUser(string $emailAddress): User

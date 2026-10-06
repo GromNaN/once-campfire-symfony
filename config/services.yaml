@@ -34,32 +34,11 @@ services:
     # test suite, where the FrankenPHP native function is unavailable.
     # A negative priority makes it the outermost decorator, ahead of the
     # profiler's TraceableHub, so the test short-circuit is never bypassed.
+    # The arguments are wired on the class; the inner hub is autowired because
+    # it is the only argument of the decorated HubInterface type.
     App\Mercure\HubDecorator:
         decorates: mercure.hub.default
         decoration_priority: -10
-        arguments:
-            $inner: '@.inner'
-            $mercureUrl: '%env(MERCURE_URL)%'
-            $environment: '%kernel.environment%'
-            $httpClient: '@http_client'
-
-    # Signed identifiers are signed with the application secret, the way the
-    # original application signs them with secret_key_base.
-    App\ActionText\SignedId:
-        arguments:
-            $secret: '%kernel.secret%'
-
-    # Uploaded files live under storage/files, the same directory the original
-    # application writes to.
-    App\ActiveStorage\BlobStorage:
-        arguments:
-            $filesDir: '%campfire.files_dir%'
-
-    # The images shipped with the application are read from the assets, so the
-    # same file is served by AssetMapper and by the controllers.
-    App\ActiveStorage\StockImages:
-        arguments:
-            $imagesDir: '%campfire.images_dir%'
 
     # Reading a page someone linked to must not become a way to reach the
     # machine the application runs on or the network behind it, so the client
@@ -70,15 +49,15 @@ services:
         arguments: ['@http_client']
         public: true
 
-    App\Opengraph\Fetcher:
-        arguments:
-            $client: '@app.opengraph.http_client'
+    # Several services speak HttpClientInterface, so the guarded client used for
+    # link previews is picked by name rather than by type.
+    Symfony\Contracts\HttpClient\HttpClientInterface $opengraph:
+        alias: app.opengraph.http_client
 
     # The client a bot webhook is called with. It is public so a test can put
     # its own client in its place. See the class for why it is a service of its
     # own rather than the client the rest of the application calls.
     App\Bot\WebhookClient:
-        arguments: ['@http_client']
         public: true
 
     # Push endpoints belong to browser vendors, but they are still addresses
@@ -103,28 +82,6 @@ services:
             - '@app.push.psr17_factory'
             - '@app.push.psr17_factory'
             - '@app.push.psr17_factory'
-
-    # The sender a test stands in for. The payload of a notification is
-    # encrypted before it leaves, so the wording a reader is shown can only be
-    # checked by replacing the sender. It is public for that reason.
-    App\Push\WebPushSender:
-        public: true
-
-    # Sign in attempts limiter, see config/packages/rate_limiter.yaml.
-    Symfony\Component\RateLimiter\RateLimiterFactory $loginLimiter: '@limiter.login'
-
-    App\Doctrine\SqlitePragmaListener:
-        tags:
-            - { name: doctrine.event_listener, event: postConnect }
-
-    App\EventListener\VersionHeadersListener:
-        arguments:
-            $appVersion: '%campfire.app_version%'
-            $gitRevision: '%campfire.git_revision%'
-
-    App\Twig\LayoutExtension:
-        arguments:
-            $appVersion: '%campfire.app_version%'
 
 when@test:
     parameters:

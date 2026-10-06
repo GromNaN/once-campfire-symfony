@@ -39,15 +39,15 @@ security:
         # A browser reads the manifest before anyone has signed in, when it
         # offers to install the application.
         - { path: ^/webmanifest$, roles: PUBLIC_ACCESS }
-        - { path: ^/first_run, roles: PUBLIC_ACCESS }
-        - { path: ^/join, roles: PUBLIC_ACCESS }
-        - { path: ^/session, roles: PUBLIC_ACCESS }
+        - { path: ^/first_run(/|$), roles: PUBLIC_ACCESS }
+        - { path: ^/join(/|$), roles: PUBLIC_ACCESS }
+        - { path: ^/session(/|$), roles: PUBLIC_ACCESS }
         # The sign in page shows the logo of the account before anyone is
         # signed in, so reading it is public.
-        - { path: ^/account/logo, roles: PUBLIC_ACCESS }
+        - { path: ^/account/logo(/|$), roles: PUBLIC_ACCESS }
         # An uploaded file is addressed with a signed identifier, which is the
         # only right a reader needs, exactly like the original application.
-        - { path: ^/rails/active_storage, roles: PUBLIC_ACCESS }
+        - { path: ^/rails/active_storage(/|$), roles: PUBLIC_ACCESS }
         - { path: ^/rooms/\d+/\d+-[A-Za-z0-9]+/, roles: ROLE_BOT }
         - { path: ^/, roles: ROLE_USER }
 

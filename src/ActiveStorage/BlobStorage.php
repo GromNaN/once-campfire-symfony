@@ -6,6 +6,7 @@ namespace App\ActiveStorage;
 
 use App\Entity\ActiveStorageBlob;
 use Doctrine\ORM\EntityManagerInterface;
+use Symfony\Component\DependencyInjection\Attribute\Autowire;
 
 /**
  * Keeps uploaded bytes on disk and describes them in the database.
@@ -28,6 +29,7 @@ final class BlobStorage
     public function __construct(
         private readonly EntityManagerInterface $entityManager,
         private readonly ImageProcessor $images,
+        #[Autowire('%campfire.files_dir%')]
         private readonly string $filesDir,
     ) {
     }

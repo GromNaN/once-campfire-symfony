@@ -1,4 +1,5 @@
 import { Controller } from '@hotwired/stimulus';
+import { csrfToken } from '../helpers/csrf_token.js';
 
 /**
  * Tells the other people of a room that the reader is writing.
@@ -44,7 +45,7 @@ export default class extends Controller {
 
         fetch(this.urlValue, {
             method: 'POST',
-            body: new URLSearchParams({ action }),
+            body: new URLSearchParams({ action, _csrf_token: csrfToken() }),
             headers: { 'X-Requested-With': 'XMLHttpRequest' },
         });
     }

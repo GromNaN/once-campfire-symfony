@@ -10,6 +10,7 @@ use App\Entity\User;
 use App\Http\LastRoom;
 use App\Repository\AccountRepository;
 use App\Room\LastVisitedRoom;
+use Symfony\Component\DependencyInjection\Attribute\Autowire;
 use Symfony\Component\HttpFoundation\RequestStack;
 use Symfony\Component\Routing\Generator\UrlGeneratorInterface;
 use Symfony\Component\Security\Core\Authentication\Token\Storage\TokenStorageInterface;
@@ -32,6 +33,7 @@ final class LayoutExtension
         private readonly RequestStack $requestStack,
         private readonly LastVisitedRoom $lastRoom,
         private readonly TokenStorageInterface $tokenStorage,
+        #[Autowire('%campfire.app_version%')]
         private readonly string $appVersion,
     ) {
     }

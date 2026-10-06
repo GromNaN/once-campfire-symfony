@@ -9,9 +9,9 @@ use App\Entity\ActiveStorageBlob;
 use App\Entity\Boost;
 use App\Entity\Message;
 use App\Message\MessageBody;
+use App\Message\SoundRequest;
 use App\Repository\BoostRepository;
 use App\Sound\Sound;
-use App\Sound\SoundLibrary;
 use Twig\Attribute\AsTwigFunction;
 
 /**
@@ -27,16 +27,11 @@ final class MessageExtension
     public const TYPE_SOUND = 'sound';
     public const TYPE_TEXT = 'text';
 
-    /**
-     * A message that is only this is a request to play the named sound.
-     */
-    private const SOUND_PATTERN = '/\A\/play (?<name>\w+)\z/';
-
     public function __construct(
         private readonly Attachments $attachments,
         private readonly MessageBody $body,
         private readonly BoostRepository $boosts,
-        private readonly SoundLibrary $sounds,
+        private readonly SoundRequest $soundRequests,
     ) {
     }
 
@@ -66,9 +61,7 @@ final class MessageExtension
     #[AsTwigFunction('message_sound')]
     public function sound(Message $message): ?Sound
     {
-        $matched = preg_match(self::SOUND_PATTERN, $this->plainText($message), $matches);
-
-        return 1 === $matched ? $this->sounds->find($matches['name']) : null;
+        return $this->soundRequests->forMessage($message);
     }
 
     #[AsTwigFunction('message_content_type')]

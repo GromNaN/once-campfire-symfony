@@ -134,6 +134,34 @@ final class SignedIdSecurityTest extends DatabaseTestCase
         );
     }
 
+    public function testAPayloadHoldingTheSeparatorIsStillRead(): void
+    {
+        $signedIds = static::getContainer()->get(SignedId::class);
+        $secret = (string) static::getContainer()->getParameter('kernel.secret');
+
+        // The payload and the signature both use the URL safe base64 alphabet,
+        // where "--" can appear, so the separator is not unique to the
+        // boundary. The model name below is picked so the encoded payload
+        // carries a separator of its own: a split on the first "--" would cut
+        // the payload in half, while anchoring on the fixed length of the
+        // signature reads it whole.
+        $gid = "gid://campfire/User\u{103FE}/1";
+        $payload = json_encode(
+            ['_rails' => ['data' => $gid, 'exp' => null, 'pur' => SignedId::PURPOSE_TRANSFER]],
+            \JSON_THROW_ON_ERROR | \JSON_UNESCAPED_SLASHES | \JSON_UNESCAPED_UNICODE,
+        );
+        $message = strtr(base64_encode($payload), '+/', '-_');
+
+        self::assertStringContainsString('--', $message);
+
+        $signature = strtr(base64_encode(hash_hmac('sha256', $message, $secret, true)), '+/', '-_');
+
+        self::assertSame(
+            ['model' => "User\u{103FE}", 'id' => '1', 'purpose' => SignedId::PURPOSE_TRANSFER],
+            $signedIds->decode($message.'--'.$signature),
+        );
+    }
+
     private function signedTransfer(User $user): string
     {
         return static::getContainer()->get(SignedId::class)->encode(

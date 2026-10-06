@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\EventListener;
 
+use Symfony\Component\DependencyInjection\Attribute\Autowire;
 use Symfony\Component\EventDispatcher\Attribute\AsEventListener;
 use Symfony\Component\HttpKernel\Event\ResponseEvent;
 
@@ -15,7 +16,9 @@ use Symfony\Component\HttpKernel\Event\ResponseEvent;
 final class VersionHeadersListener
 {
     public function __construct(
+        #[Autowire('%campfire.app_version%')]
         private readonly string $appVersion = '',
+        #[Autowire('%campfire.git_revision%')]
         private readonly string $gitRevision = '',
     ) {
     }

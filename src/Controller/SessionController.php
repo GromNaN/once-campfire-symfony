@@ -12,12 +12,14 @@ use App\Repository\UserRepository;
 use App\Security\SessionManager;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
+use Symfony\Component\DependencyInjection\Attribute\Autowire;
 use Symfony\Component\HttpFoundation\RedirectResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\PasswordHasher\Hasher\UserPasswordHasherInterface;
 use Symfony\Component\RateLimiter\RateLimiterFactory;
 use Symfony\Component\Routing\Attribute\Route;
+use Symfony\Component\Security\Http\Attribute\IsCsrfTokenValid;
 
 final class SessionController extends AbstractController
 {
@@ -33,6 +35,7 @@ final class SessionController extends AbstractController
         private readonly EntityManagerInterface $entityManager,
         private readonly UserPasswordHasherInterface $passwordHasher,
         private readonly SessionManager $sessions,
+        #[Autowire(service: 'limiter.login')]
         private readonly RateLimiterFactory $loginLimiter,
     ) {
     }
@@ -75,6 +78,7 @@ final class SessionController extends AbstractController
     }
 
     #[Route('/session', name: 'session_destroy', methods: ['DELETE'])]
+    #[IsCsrfTokenValid('logout', tokenKey: '_csrf_token')]
     public function destroy(Request $request): Response
     {
         $this->removePushSubscription($request);

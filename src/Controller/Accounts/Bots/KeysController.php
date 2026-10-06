@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace App\Controller\Accounts\Bots;
 
 use App\Repository\UserRepository;
-use App\Security\Voter\AdministerVoter;
 use App\Service\BotSetup;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Response;
@@ -28,7 +27,7 @@ final class KeysController extends AbstractController
     }
 
     #[Route('/account/bots/{bot_id}/key', name: 'account_bot_key_update', methods: ['PUT'], requirements: ['bot_id' => '\d+'])]
-    #[IsGranted(AdministerVoter::CAN_ADMINISTER)]
+    #[IsGranted('ROLE_ADMIN')]
     #[IsCsrfTokenValid('account_bot_key_update', tokenKey: '_csrf_token')]
     public function update(int $bot_id): Response
     {

@@ -13,6 +13,7 @@ use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Attribute\Route;
 use Symfony\Component\Security\Http\Attribute\CurrentUser;
+use Symfony\Component\Security\Http\Attribute\IsCsrfTokenValid;
 
 /**
  * Tells the other people in a room that someone is writing.
@@ -29,6 +30,7 @@ final class TypingController extends AbstractController
     }
 
     #[Route('/rooms/{room_id}/typing', name: 'rooms_typing', methods: ['POST'], requirements: ['room_id' => '\d+'])]
+    #[IsCsrfTokenValid('rooms_typing', tokenKey: '_csrf_token')]
     public function create(Request $request, int $room_id, #[CurrentUser] User $user): Response
     {
         $room = $this->rooms->findForUser($room_id, $user);

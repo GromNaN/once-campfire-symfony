@@ -232,6 +232,39 @@ final class AccountsTest extends DatabaseTestCase
         self::assertStringContainsString('.sidebar { background: #123456; }', (string) $this->client->getResponse()->getContent());
     }
 
+    public function testCustomStylesThatCouldCloseTheStyleElementAreRefused(): void
+    {
+        $this->runFirstRun();
+
+        $crawler = $this->client->request('GET', '/account/custom_styles/edit');
+        self::assertResponseIsSuccessful();
+
+        // The styles are written into a style element of every page, so a value
+        // that closes that element and opens a script element is refused.
+        $this->client->submit($crawler->filter('form[name="custom_styles"]')->form([
+            'custom_styles[customStyles]' => '</style><script>alert(1)</script>',
+        ]));
+
+        self::assertResponseStatusCodeSame(422);
+        self::assertNull($this->account()->getCustomStyles());
+    }
+
+    public function testStylesStoredBeforeTheRuleAreNeutralisedWhenServed(): void
+    {
+        $this->runFirstRun();
+
+        // A row written before the validation rule existed, kept as it was.
+        $account = $this->account();
+        $account->setCustomStyles('body { background: red; }</style><script>alert(1)</script>');
+        $this->entityManager()->flush();
+
+        $this->client->request('GET', '/account');
+
+        $content = (string) $this->client->getResponse()->getContent();
+        self::assertStringContainsString('body { background: red; }', $content);
+        self::assertStringNotContainsString('</style><script>', $content);
+    }
+
     public function testAnAdministratorPromotesAMember(): void
     {
         $this->runFirstRun();

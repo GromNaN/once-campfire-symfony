@@ -10,6 +10,7 @@ use Minishlink\WebPush\MessageSentReport;
 use Minishlink\WebPush\Subscription;
 use Minishlink\WebPush\WebPush;
 use Psr\Log\LoggerInterface;
+use Symfony\Component\DependencyInjection\Attribute\Autoconfigure;
 use Symfony\Component\DependencyInjection\Attribute\Autowire;
 use Symfony\Component\HttpClient\Psr18Client;
 
@@ -25,7 +26,12 @@ use Symfony\Component\HttpClient\Psr18Client;
  * The library is built on demand rather than injected, because it refuses to
  * be built at all without a key pair and an installation may well run without
  * push configured.
+ *
+ * The service is public so a test can stand in for it. The payload of a
+ * notification is encrypted before it leaves, so the wording a reader is shown
+ * can only be checked by replacing the sender.
  */
+#[Autoconfigure(public: true)]
 final class WebPushSender implements PushSender
 {
     public function __construct(

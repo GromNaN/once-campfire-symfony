@@ -9,7 +9,7 @@
 {{ form_start(form, { attr: { 'data-controller': 'form' } }) }}
     <div class="flex align-center gap">
         {% if can_administer %}
-            {{ translation_button('room_name') }}
+            <twig:TranslationButton key="room_name" />
 
             <label class="flex-item-grow txt-large">
                 {{ form_widget(form.name, { attr: {

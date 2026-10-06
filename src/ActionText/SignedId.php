@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\ActionText;
 
 use App\Rails\RailsModelName;
+use Symfony\Component\DependencyInjection\Attribute\Autowire;
 
 /**
  * Produces and reads the signed global identifiers ActionText uses to point at
@@ -30,8 +31,10 @@ final class SignedId
      */
     public const GID_APP = 'campfire';
 
-    public function __construct(private readonly string $secret)
-    {
+    public function __construct(
+        #[Autowire('%kernel.secret%')]
+        private readonly string $secret,
+    ) {
     }
 
     /**
@@ -78,27 +81,25 @@ final class SignedId
      */
     public function decode(string $sgid, bool $verifySignature = true): ?array
     {
-        if ($verifySignature) {
-            // Rails puts the signature after the first "--". The payload is
-            // base64 of a JSON document and never holds a separator, while the
-            // signature is base64 too and can: it is the first "--" that marks
-            // the boundary, so everything after it is the signature. A missing
-            // separator means the identifier is unsigned, which is only ever
-            // forged.
-            $separator = strpos($sgid, '--');
+        // Rails separates the payload from its signature with "--". The
+        // signature is URL safe base64 of a 32 byte HMAC, so it can hold a
+        // separator of its own, and neither the first nor the last occurrence
+        // marks the boundary on its own. The signature always has the same
+        // length, and anchoring on that length is what makes the split
+        // unambiguous. A string too short to hold a signature, or one whose
+        // separator is not where a signature would start, carries no signature
+        // and is only ever forged.
+        $signatureLength = \strlen($this->sign(''));
+        $message = $sgid;
+        $signature = null;
 
-            if (false === $separator) {
-                return null;
-            }
+        if (\strlen($sgid) >= $signatureLength + 2 && '--' === substr($sgid, -($signatureLength + 2), 2)) {
+            $message = substr($sgid, 0, -($signatureLength + 2));
+            $signature = substr($sgid, -$signatureLength);
+        }
 
-            $message = substr($sgid, 0, $separator);
-            $signature = substr($sgid, $separator + 2);
-
-            if (!hash_equals($this->sign($message), $signature)) {
-                return null;
-            }
-        } else {
-            $message = explode('--', $sgid, 2)[0] ?? '';
+        if ($verifySignature && (null === $signature || !hash_equals($this->sign($message), $signature))) {
+            return null;
         }
 
         if ('' === $message) {

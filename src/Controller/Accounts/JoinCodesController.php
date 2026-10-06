@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace App\Controller\Accounts;
 
 use App\Repository\AccountRepository;
-use App\Security\Voter\AdministerVoter;
 use App\Service\AccountAdministration;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Response;
@@ -28,7 +27,7 @@ final class JoinCodesController extends AbstractController
     }
 
     #[Route('/account/join_code', name: 'account_join_code_create', methods: ['POST'])]
-    #[IsGranted(AdministerVoter::CAN_ADMINISTER)]
+    #[IsGranted('ROLE_ADMIN')]
     #[IsCsrfTokenValid('account_join_code_create', tokenKey: '_csrf_token')]
     public function create(): Response
     {

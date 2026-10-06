@@ -6,7 +6,6 @@ namespace App\Controller\Users;
 
 use App\Entity\User;
 use App\Repository\UserRepository;
-use App\Security\Voter\AdministerVoter;
 use App\Service\BanAdministration;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Response;
@@ -33,7 +32,7 @@ final class BansController extends AbstractController
     }
 
     #[Route('/users/{id}/ban', name: 'user_ban_create', methods: ['POST'], requirements: ['id' => '\d+'])]
-    #[IsGranted(AdministerVoter::CAN_ADMINISTER)]
+    #[IsGranted('ROLE_ADMIN')]
     #[IsCsrfTokenValid('user_ban', tokenKey: '_csrf_token')]
     public function create(int $id, #[CurrentUser] User $currentUser): Response
     {
@@ -44,7 +43,7 @@ final class BansController extends AbstractController
     }
 
     #[Route('/users/{id}/ban', name: 'user_ban_destroy', methods: ['DELETE'], requirements: ['id' => '\d+'])]
-    #[IsGranted(AdministerVoter::CAN_ADMINISTER)]
+    #[IsGranted('ROLE_ADMIN')]
     #[IsCsrfTokenValid('user_ban', tokenKey: '_csrf_token')]
     public function destroy(int $id, #[CurrentUser] User $currentUser): Response
     {

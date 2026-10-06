@@ -40,7 +40,7 @@ final class UnfurlTest extends DatabaseTestCase
             'HEAD '.self::PICTURE => $this->file('image/png'),
         ]);
 
-        $preview = $this->json('POST', '/unfurl_link', ['url' => self::PAGE]);
+        $preview = $this->json('POST', '/unfurl_link', ['url' => self::PAGE, '_csrf_token' => $this->csrfToken('unfurl_link')]);
 
         self::assertResponseIsSuccessful();
         self::assertSame([
@@ -64,7 +64,7 @@ final class UnfurlTest extends DatabaseTestCase
                 HTML),
         ]);
 
-        $preview = $this->json('POST', '/unfurl_link', ['url' => self::PAGE]);
+        $preview = $this->json('POST', '/unfurl_link', ['url' => self::PAGE, '_csrf_token' => $this->csrfToken('unfurl_link')]);
 
         self::assertSame('http://93.184.216.34/canonical', $preview['url']);
     }
@@ -82,7 +82,7 @@ final class UnfurlTest extends DatabaseTestCase
                 HTML),
         ]);
 
-        $preview = $this->json('POST', '/unfurl_link', ['url' => self::PAGE]);
+        $preview = $this->json('POST', '/unfurl_link', ['url' => self::PAGE, '_csrf_token' => $this->csrfToken('unfurl_link')]);
 
         self::assertSame(self::PAGE, $preview['url']);
     }
@@ -92,7 +92,7 @@ final class UnfurlTest extends DatabaseTestCase
         $this->runFirstRun();
         $this->mockHttp(['GET '.self::PAGE => $this->html('<html><head><title>Nothing</title></head></html>')]);
 
-        $this->client->request('POST', '/unfurl_link', [], [], ['CONTENT_TYPE' => 'application/json'], json_encode(['url' => self::PAGE]));
+        $this->client->request('POST', '/unfurl_link', [], [], ['CONTENT_TYPE' => 'application/json'], json_encode(['url' => self::PAGE, '_csrf_token' => $this->csrfToken('unfurl_link')]));
 
         self::assertResponseStatusCodeSame(204);
     }
@@ -104,7 +104,7 @@ final class UnfurlTest extends DatabaseTestCase
             'GET '.self::PAGE => $this->html('<html><head><meta property="og:title" content="A title"></head></html>'),
         ]);
 
-        $this->client->request('POST', '/unfurl_link', [], [], ['CONTENT_TYPE' => 'application/json'], json_encode(['url' => self::PAGE]));
+        $this->client->request('POST', '/unfurl_link', [], [], ['CONTENT_TYPE' => 'application/json'], json_encode(['url' => self::PAGE, '_csrf_token' => $this->csrfToken('unfurl_link')]));
 
         self::assertResponseStatusCodeSame(204);
     }
@@ -114,7 +114,7 @@ final class UnfurlTest extends DatabaseTestCase
         $this->runFirstRun();
         $this->mockHttp(['GET '.self::PAGE => new MockResponse('{"a":1}', ['response_headers' => ['content-type' => 'application/json']])]);
 
-        $this->client->request('POST', '/unfurl_link', [], [], ['CONTENT_TYPE' => 'application/json'], json_encode(['url' => self::PAGE]));
+        $this->client->request('POST', '/unfurl_link', [], [], ['CONTENT_TYPE' => 'application/json'], json_encode(['url' => self::PAGE, '_csrf_token' => $this->csrfToken('unfurl_link')]));
 
         self::assertResponseStatusCodeSame(204);
     }
@@ -133,7 +133,7 @@ final class UnfurlTest extends DatabaseTestCase
             'HEAD http://93.184.216.34/pic.svg' => $this->file('image/svg+xml'),
         ]);
 
-        $preview = $this->json('POST', '/unfurl_link', ['url' => self::PAGE]);
+        $preview = $this->json('POST', '/unfurl_link', ['url' => self::PAGE, '_csrf_token' => $this->csrfToken('unfurl_link')]);
 
         self::assertResponseIsSuccessful();
         self::assertSame([
@@ -157,7 +157,7 @@ final class UnfurlTest extends DatabaseTestCase
                 HTML),
         ]);
 
-        $preview = $this->json('POST', '/unfurl_link', ['url' => self::PAGE]);
+        $preview = $this->json('POST', '/unfurl_link', ['url' => self::PAGE, '_csrf_token' => $this->csrfToken('unfurl_link')]);
 
         self::assertSame('The last title', $preview['title']);
     }
@@ -174,7 +174,7 @@ final class UnfurlTest extends DatabaseTestCase
                 HTML),
         ]);
 
-        $preview = $this->json('POST', '/unfurl_link', ['url' => self::PAGE]);
+        $preview = $this->json('POST', '/unfurl_link', ['url' => self::PAGE, '_csrf_token' => $this->csrfToken('unfurl_link')]);
 
         self::assertSame('A title', $preview['title']);
     }
@@ -184,7 +184,7 @@ final class UnfurlTest extends DatabaseTestCase
         $this->runFirstRun();
         $this->mockHttp([]);
 
-        $this->client->request('POST', '/unfurl_link', [], [], ['CONTENT_TYPE' => 'application/json'], json_encode(['url' => 'http://127.0.0.1:8080/admin']));
+        $this->client->request('POST', '/unfurl_link', [], [], ['CONTENT_TYPE' => 'application/json'], json_encode(['url' => 'http://127.0.0.1:8080/admin', '_csrf_token' => $this->csrfToken('unfurl_link')]));
 
         self::assertResponseStatusCodeSame(204);
         self::assertSame([], $this->requests);
@@ -195,7 +195,7 @@ final class UnfurlTest extends DatabaseTestCase
         $this->runFirstRun();
         $this->mockHttp([]);
 
-        $this->client->request('POST', '/unfurl_link', [], [], ['CONTENT_TYPE' => 'application/json'], json_encode(['url' => 'http://93.184.216.34/archive.zip']));
+        $this->client->request('POST', '/unfurl_link', [], [], ['CONTENT_TYPE' => 'application/json'], json_encode(['url' => 'http://93.184.216.34/archive.zip', '_csrf_token' => $this->csrfToken('unfurl_link')]));
 
         self::assertResponseStatusCodeSame(204);
         self::assertSame([], $this->requests);
@@ -206,7 +206,7 @@ final class UnfurlTest extends DatabaseTestCase
         $this->runFirstRun();
         $this->mockHttp([]);
 
-        $this->client->request('POST', '/unfurl_link', [], [], ['CONTENT_TYPE' => 'application/json'], json_encode(['url' => 'file:///etc/passwd']));
+        $this->client->request('POST', '/unfurl_link', [], [], ['CONTENT_TYPE' => 'application/json'], json_encode(['url' => 'file:///etc/passwd', '_csrf_token' => $this->csrfToken('unfurl_link')]));
 
         self::assertResponseStatusCodeSame(204);
         self::assertSame([], $this->requests);
@@ -228,7 +228,7 @@ final class UnfurlTest extends DatabaseTestCase
                 HTML),
         ]);
 
-        $preview = $this->json('POST', '/unfurl_link', ['url' => 'https://x.com/jerome/status/1']);
+        $preview = $this->json('POST', '/unfurl_link', ['url' => 'https://x.com/jerome/status/1', '_csrf_token' => $this->csrfToken('unfurl_link')]);
 
         self::assertSame('A tweet', $preview['title']);
         self::assertSame(['GET https://fxtwitter.com/jerome/status/1'], $this->requests);
@@ -239,7 +239,7 @@ final class UnfurlTest extends DatabaseTestCase
         $this->runFirstRun();
         $this->mockHttp([]);
 
-        $this->client->request('POST', '/unfurl_link', [], [], ['CONTENT_TYPE' => 'application/json'], '{}');
+        $this->client->request('POST', '/unfurl_link', [], [], ['CONTENT_TYPE' => 'application/json'], json_encode(['_csrf_token' => $this->csrfToken('unfurl_link')]));
 
         self::assertResponseStatusCodeSame(400);
     }
@@ -249,7 +249,7 @@ final class UnfurlTest extends DatabaseTestCase
         $this->runFirstRun();
         $this->mockHttp([]);
 
-        $this->client->request('POST', '/unfurl_link', [], [], ['CONTENT_TYPE' => 'application/json'], json_encode(['url' => '  ']));
+        $this->client->request('POST', '/unfurl_link', [], [], ['CONTENT_TYPE' => 'application/json'], json_encode(['url' => '  ', '_csrf_token' => $this->csrfToken('unfurl_link')]));
 
         self::assertResponseStatusCodeSame(400);
     }

@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Bot;
 
+use Symfony\Component\DependencyInjection\Attribute\Autowire;
 use Symfony\Contracts\HttpClient\HttpClientInterface;
 use Symfony\Contracts\HttpClient\ResponseInterface;
 use Symfony\Contracts\HttpClient\ResponseStreamInterface;
@@ -20,8 +21,10 @@ use Symfony\Contracts\HttpClient\ResponseStreamInterface;
  */
 final class WebhookClient implements HttpClientInterface
 {
-    public function __construct(private readonly HttpClientInterface $inner)
-    {
+    public function __construct(
+        #[Autowire(service: 'http_client')]
+        private readonly HttpClientInterface $inner,
+    ) {
     }
 
     public function request(string $method, string $url, array $options = []): ResponseInterface

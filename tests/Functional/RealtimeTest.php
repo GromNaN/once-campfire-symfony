@@ -125,7 +125,7 @@ final class RealtimeTest extends DatabaseTestCase
         $this->runFirstRun();
         $room = $this->openRoom();
 
-        $this->client->request('POST', '/rooms/'.$room->getId().'/typing', ['action' => 'start']);
+        $this->client->request('POST', '/rooms/'.$room->getId().'/typing', ['action' => 'start', '_csrf_token' => $this->csrfToken('rooms_typing')]);
 
         self::assertResponseStatusCodeSame(204);
 
@@ -221,7 +221,7 @@ final class RealtimeTest extends DatabaseTestCase
         $room = $this->openRoom();
         $alice = $this->findUser('alice@example.com');
 
-        $this->client->request('POST', '/rooms/'.$room->getId().'/presence');
+        $this->client->request('POST', '/rooms/'.$room->getId().'/presence', ['_csrf_token' => $this->csrfToken('rooms_presence')]);
 
         self::assertResponseStatusCodeSame(204);
         $membership = $this->membershipOf($room, $alice);
@@ -235,8 +235,8 @@ final class RealtimeTest extends DatabaseTestCase
         $room = $this->openRoom();
         $alice = $this->findUser('alice@example.com');
 
-        $this->client->request('POST', '/rooms/'.$room->getId().'/presence');
-        $this->client->request('POST', '/rooms/'.$room->getId().'/presence', ['action' => 'refresh']);
+        $this->client->request('POST', '/rooms/'.$room->getId().'/presence', ['_csrf_token' => $this->csrfToken('rooms_presence')]);
+        $this->client->request('POST', '/rooms/'.$room->getId().'/presence', ['action' => 'refresh', '_csrf_token' => $this->csrfToken('rooms_presence')]);
 
         self::assertResponseStatusCodeSame(204);
         self::assertSame(1, $this->membershipOf($room, $alice)->getConnections());
@@ -248,8 +248,8 @@ final class RealtimeTest extends DatabaseTestCase
         $room = $this->openRoom();
         $alice = $this->findUser('alice@example.com');
 
-        $this->client->request('POST', '/rooms/'.$room->getId().'/presence');
-        $this->client->request('POST', '/rooms/'.$room->getId().'/presence', ['action' => 'absent']);
+        $this->client->request('POST', '/rooms/'.$room->getId().'/presence', ['_csrf_token' => $this->csrfToken('rooms_presence')]);
+        $this->client->request('POST', '/rooms/'.$room->getId().'/presence', ['action' => 'absent', '_csrf_token' => $this->csrfToken('rooms_presence')]);
 
         self::assertResponseStatusCodeSame(204);
         $membership = $this->membershipOf($room, $alice);
@@ -261,7 +261,7 @@ final class RealtimeTest extends DatabaseTestCase
     {
         $this->runFirstRun();
 
-        $this->client->request('POST', '/rooms/999999/presence');
+        $this->client->request('POST', '/rooms/999999/presence', ['_csrf_token' => $this->csrfToken('rooms_presence')]);
 
         self::assertResponseStatusCodeSame(404);
     }

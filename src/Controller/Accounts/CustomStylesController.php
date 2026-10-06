@@ -8,7 +8,6 @@ use App\Entity\Account;
 use App\Form\CustomStylesType;
 use App\Form\Data\CustomStylesData;
 use App\Repository\AccountRepository;
-use App\Security\Voter\AdministerVoter;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\Form\FormInterface;
@@ -32,14 +31,14 @@ final class CustomStylesController extends AbstractController
     }
 
     #[Route('/account/custom_styles/edit', name: 'account_custom_styles_edit', methods: ['GET'])]
-    #[IsGranted(AdministerVoter::CAN_ADMINISTER)]
+    #[IsGranted('ROLE_ADMIN')]
     public function edit(): Response
     {
         return $this->page($this->createForm(CustomStylesType::class, $this->data()));
     }
 
     #[Route('/account/custom_styles', name: 'account_custom_styles_update', methods: ['PUT'])]
-    #[IsGranted(AdministerVoter::CAN_ADMINISTER)]
+    #[IsGranted('ROLE_ADMIN')]
     public function update(Request $request): Response
     {
         $form = $this->createForm(CustomStylesType::class, $data = $this->data());

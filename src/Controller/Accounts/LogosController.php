@@ -11,7 +11,6 @@ use App\ActiveStorage\Variants;
 use App\Entity\ActiveStorageBlob;
 use App\Entity\Account;
 use App\Repository\AccountRepository;
-use App\Security\Voter\AdministerVoter;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
@@ -74,7 +73,7 @@ final class LogosController extends AbstractController
     }
 
     #[Route('/account/logo', name: 'account_logo_destroy', methods: ['DELETE'])]
-    #[IsGranted(AdministerVoter::CAN_ADMINISTER)]
+    #[IsGranted('ROLE_ADMIN')]
     #[IsCsrfTokenValid('account_logo_destroy', tokenKey: '_csrf_token')]
     public function destroy(): Response
     {

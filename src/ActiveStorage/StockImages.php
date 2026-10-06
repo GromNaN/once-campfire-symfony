@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\ActiveStorage;
 
+use Symfony\Component\DependencyInjection\Attribute\Autowire;
 use Symfony\Component\Mime\MimeTypes;
 
 /**
@@ -19,8 +20,10 @@ final class StockImages
     public const APP_ICON = 'logos/app-icon.png';
     public const APP_ICON_SMALL = 'logos/app-icon-192.png';
 
-    public function __construct(private readonly string $imagesDir)
-    {
+    public function __construct(
+        #[Autowire('%campfire.images_dir%')]
+        private readonly string $imagesDir,
+    ) {
     }
 
     public function path(string $name): string

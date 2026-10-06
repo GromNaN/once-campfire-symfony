@@ -13,6 +13,7 @@ use App\Repository\PushSubscriptionRepository;
 use App\Repository\SearchRepository;
 use App\Security\SessionManager;
 use Doctrine\ORM\EntityManagerInterface;
+use Symfony\Component\Uid\Uuid;
 
 /**
  * The actions an administrator takes on the account and its members.
@@ -91,15 +92,6 @@ final class AccountAdministration
             return $emailAddress;
         }
 
-        return str_replace('@', '-deactivated-'.self::uuid().'@', $emailAddress);
-    }
-
-    private static function uuid(): string
-    {
-        $bytes = random_bytes(16);
-        $bytes[6] = \chr((\ord($bytes[6]) & 0x0F) | 0x40);
-        $bytes[8] = \chr((\ord($bytes[8]) & 0x3F) | 0x80);
-
-        return vsprintf('%s%s-%s-%s-%s-%s%s%s', str_split(bin2hex($bytes), 4));
+        return str_replace('@', '-deactivated-'.Uuid::v4()->toRfc4122().'@', $emailAddress);
     }
 }

@@ -22,7 +22,6 @@ framework:
         cookie_httponly: true
         # Sessions live under the storage volume rather than the temporary
         # cache, so a container restart does not sign everyone out.
-        handler_id: session.handler.native_file
         save_path: '%kernel.project_dir%/storage/sessions'
 
     php_errors:

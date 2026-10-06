@@ -29,7 +29,7 @@
                 </fieldset>
 
                 <div class="flex align-center gap">
-                    {{ translation_button('user_name') }}
+                    <twig:TranslationButton key="user_name" />
                     <label class="flex align-center gap flex-item-grow txt-large input input--actor">
                         {{ form_widget(form.name, { attr: {
                             class: 'input',
@@ -43,7 +43,7 @@
                 </div>
 
                 <div class="flex align-center gap">
-                    {{ translation_button('email_address') }}
+                    <twig:TranslationButton key="email_address" />
                     <label class="flex align-center gap flex-item-grow txt-large input input--actor">
                         {{ form_widget(form.emailAddress, { attr: {
                             class: 'input',
@@ -55,7 +55,7 @@
                 </div>
 
                 <div class="flex align-center gap">
-                    {{ translation_button('password') }}
+                    <twig:TranslationButton key="password" />
                     <label class="flex align-center gap flex-item-grow txt-large input input--actor">
                         {{ form_widget(form.password, { attr: {
                             class: 'input',
