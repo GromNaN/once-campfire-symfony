@@ -10,6 +10,7 @@ use App\Entity\Room;
 use App\Entity\User;
 use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
 use Doctrine\Persistence\ManagerRegistry;
+use SortDirection;
 
 /**
  * @extends ServiceEntityRepository<Room>
@@ -32,7 +33,7 @@ class RoomRepository extends ServiceEntityRepository
         return $this->getEntityManager()->createQueryBuilder()
             ->select('room')
             ->from(OpenRoom::class, 'room')
-            ->orderBy('room.id', 'ASC')
+            ->orderBy('room.id', SortDirection::Ascending)
             ->getQuery()
             ->getResult();
     }
@@ -47,7 +48,7 @@ class RoomRepository extends ServiceEntityRepository
             ->from(DirectRoom::class, 'room')
             ->leftJoin('room.memberships', 'membership')
             ->leftJoin('membership.user', 'participant')
-            ->orderBy('room.id', 'ASC')
+            ->orderBy('room.id', SortDirection::Ascending)
             ->getQuery()
             ->getResult();
     }
@@ -61,7 +62,7 @@ class RoomRepository extends ServiceEntityRepository
     public function findOriginal(): ?Room
     {
         return $this->createQueryBuilder('room')
-            ->orderBy('room.id', 'ASC')
+            ->orderBy('room.id', SortDirection::Ascending)
             ->setMaxResults(1)
             ->getQuery()
             ->getOneOrNullResult();
@@ -77,7 +78,7 @@ class RoomRepository extends ServiceEntityRepository
             ->join('room.memberships', 'membership')
             ->andWhere('membership.user = :user')
             ->setParameter('user', $user)
-            ->orderBy('room.id', 'DESC')
+            ->orderBy('room.id', SortDirection::Descending)
             ->setMaxResults(1)
             ->getQuery()
             ->getOneOrNullResult();

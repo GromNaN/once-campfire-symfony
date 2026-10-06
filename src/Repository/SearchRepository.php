@@ -8,6 +8,7 @@ use App\Entity\Search;
 use App\Entity\User;
 use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
 use Doctrine\Persistence\ManagerRegistry;
+use SortDirection;
 use Symfony\Component\Clock\ClockInterface;
 
 /**
@@ -71,7 +72,7 @@ class SearchRepository extends ServiceEntityRepository
         return $this->createQueryBuilder('s')
             ->andWhere('s.user = :user')
             ->setParameter('user', $user)
-            ->orderBy('s.updatedAt', 'DESC')
+            ->orderBy('s.updatedAt', SortDirection::Descending)
             ->setMaxResults($limit)
             ->getQuery()
             ->getResult();

@@ -10,6 +10,7 @@ use App\Entity\Room;
 use App\Entity\User;
 use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
 use Doctrine\Persistence\ManagerRegistry;
+use SortDirection;
 
 /**
  * @extends ServiceEntityRepository<User>
@@ -31,7 +32,7 @@ class UserRepository extends ServiceEntityRepository
         return $this->createQueryBuilder('user')
             ->andWhere('user.status = :status')
             ->setParameter('status', UserStatus::Active)
-            ->orderBy('LOWER(user.name)', 'ASC')
+            ->orderBy('LOWER(user.name)', SortDirection::Ascending)
             ->getQuery()
             ->getResult();
     }
@@ -50,7 +51,7 @@ class UserRepository extends ServiceEntityRepository
         $builder = $this->createQueryBuilder('user')
             ->andWhere('user.role != :bot')
             ->setParameter('bot', UserRole::Bot)
-            ->orderBy('LOWER(user.name)', 'ASC');
+            ->orderBy('LOWER(user.name)', SortDirection::Ascending);
 
         if ($includeBanned) {
             $builder
@@ -82,7 +83,7 @@ class UserRepository extends ServiceEntityRepository
         return $this->createQueryBuilder('user')
             ->andWhere('user.role = :role')
             ->setParameter('role', UserRole::Administrator)
-            ->orderBy('user.id', 'ASC')
+            ->orderBy('user.id', SortDirection::Ascending)
             ->setMaxResults(1)
             ->getQuery()
             ->getOneOrNullResult();
@@ -95,7 +96,7 @@ class UserRepository extends ServiceEntityRepository
             ->andWhere('user.status = :status')
             ->setParameter('role', UserRole::Bot)
             ->setParameter('status', UserStatus::Active)
-            ->orderBy('LOWER(user.name)', 'ASC')
+            ->orderBy('LOWER(user.name)', SortDirection::Ascending)
             ->getQuery()
             ->getResult();
     }
@@ -148,7 +149,7 @@ class UserRepository extends ServiceEntityRepository
         $builder = $this->createQueryBuilder('user')
             ->andWhere('user.status = :status')
             ->setParameter('status', UserStatus::Active)
-            ->orderBy('LOWER(user.name)', 'ASC')
+            ->orderBy('LOWER(user.name)', SortDirection::Ascending)
             ->addOrderBy('user.id', 'ASC')
             ->setMaxResults($limit)
             ->setFirstResult($offset);
@@ -190,7 +191,7 @@ class UserRepository extends ServiceEntityRepository
             ->setParameter('room', $room)
             ->setParameter('role', UserRole::Bot)
             ->setParameter('status', UserStatus::Active)
-            ->orderBy('user.id', 'ASC');
+            ->orderBy('user.id', SortDirection::Ascending);
 
         if ([] !== $ids) {
             $builder->andWhere('user.id IN (:ids)')->setParameter('ids', $ids);

@@ -11,6 +11,7 @@ use App\Entity\Room;
 use App\Entity\User;
 use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
 use Doctrine\Persistence\ManagerRegistry;
+use SortDirection;
 
 /**
  * @extends ServiceEntityRepository<Membership>
@@ -61,7 +62,7 @@ class MembershipRepository extends ServiceEntityRepository
             ->join('m.room', 'r')
             ->andWhere('m.user = :user')
             ->setParameter('user', $user)
-            ->orderBy('LOWER(r.name)', 'ASC')
+            ->orderBy('LOWER(r.name)', SortDirection::Ascending)
             ->getQuery()
             ->getResult();
     }
@@ -82,7 +83,7 @@ class MembershipRepository extends ServiceEntityRepository
             ->select('IDENTITY(m.room)')
             ->andWhere('m.user = :user')
             ->setParameter('user', $user)
-            ->orderBy('m.id', 'ASC')
+            ->orderBy('m.id', SortDirection::Ascending)
             ->getQuery()
             ->getSingleColumnResult();
 
@@ -146,7 +147,7 @@ class MembershipRepository extends ServiceEntityRepository
             ->andWhere('m.involvement != :invisible')
             ->setParameter('user', $user)
             ->setParameter('invisible', MembershipInvolvement::Invisible)
-            ->orderBy('LOWER(r.name)', 'ASC')
+            ->orderBy('LOWER(r.name)', SortDirection::Ascending)
             ->getQuery()
             ->getResult();
     }

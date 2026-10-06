@@ -6,6 +6,7 @@ use App\Entity\Boost;
 use App\Entity\Message;
 use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
 use Doctrine\Persistence\ManagerRegistry;
+use SortDirection;
 
 /**
  * @extends ServiceEntityRepository<Boost>
@@ -29,7 +30,7 @@ class BoostRepository extends ServiceEntityRepository
             ->join('boost.booster', 'booster')
             ->andWhere('boost.message = :message')
             ->setParameter('message', $message)
-            ->orderBy('boost.createdAt', 'ASC')
+            ->orderBy('boost.createdAt', SortDirection::Ascending)
             ->addOrderBy('boost.id', 'ASC')
             ->getQuery()
             ->getResult();

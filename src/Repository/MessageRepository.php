@@ -10,6 +10,7 @@ use App\Entity\Room;
 use App\Entity\User;
 use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
 use Doctrine\Persistence\ManagerRegistry;
+use SortDirection;
 
 /**
  * Every comparison of a timestamp binds its parameter with the rails_datetime
@@ -34,7 +35,7 @@ class MessageRepository extends ServiceEntityRepository
     public function findLastPage(Room $room, int $size = Message::PAGE_SIZE): array
     {
         $messages = $this->pageQuery($room)
-            ->orderBy('message.createdAt', 'DESC')
+            ->orderBy('message.createdAt', SortDirection::Descending)
             ->addOrderBy('message.id', 'DESC')
             ->setMaxResults($size)
             ->getQuery()
@@ -53,7 +54,7 @@ class MessageRepository extends ServiceEntityRepository
         $messages = $this->pageQuery($room)
             ->andWhere('message.createdAt < :createdAt')
             ->setParameter('createdAt', $message->getCreatedAt(), RailsDateTimeType::NAME)
-            ->orderBy('message.createdAt', 'DESC')
+            ->orderBy('message.createdAt', SortDirection::Descending)
             ->addOrderBy('message.id', 'DESC')
             ->setMaxResults($size)
             ->getQuery()
@@ -72,7 +73,7 @@ class MessageRepository extends ServiceEntityRepository
         return $this->pageQuery($room)
             ->andWhere('message.createdAt > :createdAt')
             ->setParameter('createdAt', $message->getCreatedAt(), RailsDateTimeType::NAME)
-            ->orderBy('message.createdAt', 'ASC')
+            ->orderBy('message.createdAt', SortDirection::Ascending)
             ->addOrderBy('message.id', 'ASC')
             ->setMaxResults($size)
             ->getQuery()
@@ -90,7 +91,7 @@ class MessageRepository extends ServiceEntityRepository
         return $this->pageQuery($room)
             ->andWhere('message.createdAt > :since')
             ->setParameter('since', $since, RailsDateTimeType::NAME)
-            ->orderBy('message.createdAt', 'ASC')
+            ->orderBy('message.createdAt', SortDirection::Ascending)
             ->addOrderBy('message.id', 'ASC')
             ->setMaxResults($size)
             ->getQuery()
@@ -110,7 +111,7 @@ class MessageRepository extends ServiceEntityRepository
         $builder = $this->pageQuery($room)
             ->andWhere('message.updatedAt > :since')
             ->setParameter('since', $since, RailsDateTimeType::NAME)
-            ->orderBy('message.updatedAt', 'DESC')
+            ->orderBy('message.updatedAt', SortDirection::Descending)
             ->addOrderBy('message.id', 'DESC')
             ->setMaxResults($size);
 
@@ -149,7 +150,7 @@ class MessageRepository extends ServiceEntityRepository
             ->andWhere('message.id IN (:ids)')
             ->setParameter('user', $user)
             ->setParameter('ids', $ids)
-            ->orderBy('message.id', 'ASC')
+            ->orderBy('message.id', SortDirection::Ascending)
             ->getQuery()
             ->getResult();
     }
@@ -214,7 +215,7 @@ class MessageRepository extends ServiceEntityRepository
             ->join('message.room', 'room')
             ->andWhere('message.creator = :creatorId')
             ->setParameter('creatorId', $creatorId)
-            ->orderBy('message.id', 'ASC')
+            ->orderBy('message.id', SortDirection::Ascending)
             ->getQuery()
             ->getResult();
     }
