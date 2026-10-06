@@ -6,12 +6,14 @@ DEV_COMPOSE = docker compose -f compose.yaml -f compose.dev.yaml
 
 up: ## Build and start the production stack
 	docker compose up -d --build
+	@echo "The application is available at http://localhost:$$(docker compose port app 80 | cut -d: -f2)"
 
 down: ## Stop the production stack
 	docker compose down
 
 dev: ## Build and start the development stack
 	$(DEV_COMPOSE) up -d --build
+	@echo "The application is available at http://localhost:$$($(DEV_COMPOSE) port app 80 | cut -d: -f2)"
 
 dev-down: ## Stop the development stack
 	$(DEV_COMPOSE) down
