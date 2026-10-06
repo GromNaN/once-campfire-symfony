@@ -7,6 +7,7 @@ namespace App\Mercure;
 use Symfony\Component\Mercure\Hub;
 use Symfony\Component\Mercure\HubInterface;
 use Symfony\Component\Mercure\Jwt\FactoryTokenProvider;
+use Symfony\Component\Mercure\Jwt\Grant;
 use Symfony\Component\Mercure\Jwt\TokenFactoryInterface;
 use Symfony\Component\Mercure\ProtocolVersion;
 use Symfony\Component\Mercure\Update;
@@ -103,7 +104,7 @@ final class HubDecorator implements HubInterface
 
             $this->httpHub = new Hub(
                 url: $this->mercureUrl,
-                jwtProvider: new FactoryTokenProvider($factory),
+                jwtProvider: new FactoryTokenProvider($factory, [new Grant([Grant::ACTION_PUBLISH], ['*'])]),
                 jwtFactory: $factory,
                 publicUrl: $this->inner->getPublicUrl(),
                 httpClient: $this->httpClient,

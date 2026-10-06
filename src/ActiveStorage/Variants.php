@@ -59,7 +59,7 @@ final class Variants
         $digest = $this->digest($name, $spec);
 
         $record = $this->records->findOneBy(['blob' => $blob, 'variationDigest' => $digest]);
-        $existing = $record?->getBlob();
+        $existing = $record?->getVariantBlob();
 
         if (null !== $existing && $this->storage->exists($existing)) {
             return $existing;
@@ -83,7 +83,7 @@ final class Variants
         );
 
         $record ??= new ActiveStorageVariantRecord();
-        $record->setBlob($blob)->setVariationDigest($digest);
+        $record->setBlob($blob)->setVariantBlob($variant)->setVariationDigest($digest);
 
         $this->entityManager->persist($record);
         $this->entityManager->flush();
@@ -98,7 +98,7 @@ final class Variants
     public function purgeFor(ActiveStorageBlob $blob): void
     {
         foreach ($this->records->findBy(['blob' => $blob]) as $record) {
-            $variant = $record->getBlob();
+            $variant = $record->getVariantBlob();
 
             $this->entityManager->remove($record);
             $this->entityManager->flush();

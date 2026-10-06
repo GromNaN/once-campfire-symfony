@@ -81,7 +81,13 @@ final class MessageIndex
             return [];
         }
 
-        return $this->messages->findReachableByIds($user, array_map(intval(...), $ids));
+        $messages = $this->messages->findReachableByIds($user, array_map(intval(...), $ids));
+
+        // The results are drawn as messages, so their bodies and their files are
+        // read in two queries rather than one per result.
+        $this->body->prime($messages);
+
+        return $messages;
     }
 
     /**

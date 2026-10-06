@@ -28,15 +28,17 @@ final class RoomManager
      */
     public function createFor(Room $room, iterable $users): Room
     {
-        $this->entityManager->persist($room);
+        return $this->entityManager->wrapInTransaction(function () use ($room, $users): Room {
+            $this->entityManager->persist($room);
 
-        foreach ($users as $user) {
-            $this->entityManager->persist($room->addMember($user));
-        }
+            foreach ($users as $user) {
+                $this->entityManager->persist($room->addMember($user));
+            }
 
-        $this->entityManager->flush();
+            $this->entityManager->flush();
 
-        return $room;
+            return $room;
+        });
     }
 
     /**
@@ -44,11 +46,13 @@ final class RoomManager
      */
     public function grant(Room $room, iterable $users): void
     {
-        foreach ($users as $user) {
-            $this->entityManager->persist($room->addMember($user));
-        }
+        $this->entityManager->wrapInTransaction(function () use ($room, $users): void {
+            foreach ($users as $user) {
+                $this->entityManager->persist($room->addMember($user));
+            }
 
-        $this->entityManager->flush();
+            $this->entityManager->flush();
+        });
     }
 
     /**
@@ -56,16 +60,18 @@ final class RoomManager
      */
     public function revoke(Room $room, iterable $users): void
     {
-        foreach ($users as $user) {
-            foreach ($room->getMemberships() as $membership) {
-                if ($membership->getUser()?->getId() === $user->getId()) {
-                    $room->getMemberships()->removeElement($membership);
-                    $this->entityManager->remove($membership);
+        $this->entityManager->wrapInTransaction(function () use ($room, $users): void {
+            foreach ($users as $user) {
+                foreach ($room->getMemberships() as $membership) {
+                    if ($membership->getUser()?->getId() === $user->getId()) {
+                        $room->getMemberships()->removeElement($membership);
+                        $this->entityManager->remove($membership);
+                    }
                 }
             }
-        }
 
-        $this->entityManager->flush();
+            $this->entityManager->flush();
+        });
     }
 
     /**
@@ -79,18 +85,22 @@ final class RoomManager
      */
     public function revise(Room $room, array $users): void
     {
-        $wanted = $this->sortedIds($users);
-        $current = $this->sortedIds($room->getMembers());
+        // Granting and revoking are one edit: a member who joins the list while
+        // another leaves is not left half applied when one side fails.
+        $this->entityManager->wrapInTransaction(function () use ($room, $users): void {
+            $wanted = $this->sortedIds($users);
+            $current = $this->sortedIds($room->getMembers());
 
-        $this->grant($room, array_filter(
-            $users,
-            static fn (User $user): bool => !\in_array($user->getId(), $current, true),
-        ));
+            $this->grant($room, array_filter(
+                $users,
+                static fn (User $user): bool => !\in_array($user->getId(), $current, true),
+            ));
 
-        $this->revoke($room, array_filter(
-            $room->getMembers(),
-            static fn (User $user): bool => !\in_array($user->getId(), $wanted, true),
-        ));
+            $this->revoke($room, array_filter(
+                $room->getMembers(),
+                static fn (User $user): bool => !\in_array($user->getId(), $wanted, true),
+            ));
+        });
     }
 
     /**

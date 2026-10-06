@@ -31,7 +31,10 @@ services:
       MERCURE_PUBLIC_URL: ${MERCURE_PUBLIC_URL:-http://localhost:8080/.well-known/mercure}
       VAPID_SUBJECT: ${VAPID_SUBJECT:-mailto:campfire@localhost}
       SERVER_NAME: ${SERVER_NAME:-:80}
-      TLS_DOMAIN: ${TLS_DOMAIN:-}
+      DEFAULT_URI: ${DEFAULT_URI:-http://localhost:8080}
+      # The mailer service below receives the messages. .env keeps the null
+      # transport as its local default.
+      MAILER_DSN: smtp://mailer:1025
       APP_VERSION: ${APP_VERSION:-}
       GIT_REVISION: ${GIT_REVISION:-}
     volumes:
@@ -40,6 +43,35 @@ services:
       # and the assets, the cache is written to /tmp and the logs go to the
       # standard output of the container.
       - storage:/app/storage
+
+  # The Messenger worker drains the async doctrine queue: webhook delivery,
+  # push notifications and banned content removal. It needs HTTP publishing
+  # because mercure_publish() only exists inside the FrankenPHP server process,
+  # so the app's MERCURE_URL points at the app container rather than localhost.
+  worker:
+    build:
+      context: .
+    restart: unless-stopped
+    env_file:
+      - path: .env.local
+        required: false
+    environment:
+      APP_ENV: prod
+      APP_DEBUG: "0"
+      MERCURE_URL: http://app/.well-known/mercure
+      MERCURE_PUBLIC_URL: ${MERCURE_PUBLIC_URL:-http://localhost:8080/.well-known/mercure}
+      VAPID_SUBJECT: ${VAPID_SUBJECT:-mailto:campfire@localhost}
+      DEFAULT_URI: ${DEFAULT_URI:-http://localhost:8080}
+    volumes:
+      - storage:/app/storage
+    command: ["php", "bin/console", "messenger:consume", "async", "--time-limit=3600", "--memory-limit=128M", "-vv"]
+    depends_on:
+      app:
+        condition: service_healthy
+    # The image healthcheck probes localhost/up, which the worker does not
+    # serve. Left enabled it would report the worker as unhealthy.
+    healthcheck:
+      disable: true
 
   mailer:
     image: axllent/mailpit

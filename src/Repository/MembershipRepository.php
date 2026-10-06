@@ -67,6 +67,29 @@ class MembershipRepository extends ServiceEntityRepository
     }
 
     /**
+     * The identifiers of the rooms a user is a member of, oldest membership
+     * first.
+     *
+     * The Mercure topics of a user name their rooms, and they are built on
+     * every authenticated response, so the rooms are read as identifiers in one
+     * query rather than as memberships with their room loaded one by one.
+     *
+     * @return list<int>
+     */
+    public function findRoomIdsForUser(User $user): array
+    {
+        $ids = $this->createQueryBuilder('m')
+            ->select('IDENTITY(m.room)')
+            ->andWhere('m.user = :user')
+            ->setParameter('user', $user)
+            ->orderBy('m.id', 'ASC')
+            ->getQuery()
+            ->getSingleColumnResult();
+
+        return array_values(array_map(intval(...), array_filter($ids, static fn ($id) => null !== $id)));
+    }
+
+    /**
      * Members of the room who asked to see it and are not connected right now.
      *
      * Those are the ones a new message leaves unread: someone reading the room

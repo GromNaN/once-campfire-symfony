@@ -16,6 +16,31 @@ class ActionTextRichTextRepository extends ServiceEntityRepository
         parent::__construct($registry, ActionTextRichText::class);
     }
 
+    /**
+     * The bodies of many records at once, which is what a page of messages
+     * needs so that it does not read one body per message.
+     *
+     * @param list<int> $recordIds
+     *
+     * @return list<ActionTextRichText>
+     */
+    public function findBodiesFor(array $recordIds, string $recordType, string $name): array
+    {
+        if ([] === $recordIds) {
+            return [];
+        }
+
+        return $this->createQueryBuilder('richText')
+            ->andWhere('richText.recordType = :recordType')
+            ->andWhere('richText.recordId IN (:recordIds)')
+            ->andWhere('richText.name = :name')
+            ->setParameter('recordType', $recordType)
+            ->setParameter('recordIds', $recordIds)
+            ->setParameter('name', $name)
+            ->getQuery()
+            ->getResult();
+    }
+
 //    /**
 //     * @return ActionTextRichText[] Returns an array of ActionTextRichText objects
 //     */

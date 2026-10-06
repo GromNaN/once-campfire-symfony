@@ -27,6 +27,20 @@ services:
       - storage:/app/storage
       - var:/app/var
 
+  # The worker consumes the mounted source too, so a code change is picked up
+  # on the next restart. The Caddyfile mount is not needed: the worker does not
+  # serve HTTP.
+  worker:
+    environment:
+      APP_ENV: dev
+      APP_DEBUG: "1"
+      MAILER_DSN: smtp://mailer:1025
+      MERCURE_URL: http://app/.well-known/mercure
+    volumes:
+      - .:/app
+      - storage:/app/storage
+      - var:/app/var
+
 volumes:
   # Development keeps the cache and the logs across restarts, so that a restart
   # does not pay for the container build again.

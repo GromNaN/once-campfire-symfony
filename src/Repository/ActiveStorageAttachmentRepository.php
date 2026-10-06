@@ -45,4 +45,25 @@ class ActiveStorageAttachmentRepository extends ServiceEntityRepository
             'name' => $name,
         ], ['id' => 'ASC']);
     }
+
+    /**
+     * The attachments of many records of the same kind at once, which is what a
+     * page of messages needs so that it does not read one file per message.
+     *
+     * @param list<int> $recordIds
+     *
+     * @return list<ActiveStorageAttachment>
+     */
+    public function findManyFor(string $recordType, array $recordIds, string $name): array
+    {
+        if ([] === $recordIds) {
+            return [];
+        }
+
+        return $this->findBy([
+            'recordType' => $recordType,
+            'recordId' => $recordIds,
+            'name' => $name,
+        ], ['id' => 'ASC']);
+    }
 }

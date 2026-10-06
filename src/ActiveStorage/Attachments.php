@@ -9,6 +9,8 @@ use App\Entity\ActiveStorageBlob;
 use App\Rails\RailsModelName;
 use App\Repository\ActiveStorageAttachmentRepository;
 use Doctrine\ORM\EntityManagerInterface;
+use Symfony\Component\DependencyInjection\Attribute\AutoconfigureTag;
+use Symfony\Contracts\Service\ResetInterface;
 
 /**
  * Links uploaded files to the records that own them.
@@ -16,8 +18,14 @@ use Doctrine\ORM\EntityManagerInterface;
  * The table is polymorphic, exactly like ActiveStorage: a record is identified
  * by its Rails model name and its identifier rather than by a foreign key. A
  * user carries one avatar, an account one logo, and a message one file.
+ *
+ * A page shows a whole page of messages, so reading each file with a query of
+ * its own would be an N+1. The attachments read once are kept here, and a page
+ * asks for all of them at once through primeFor(). The cache is dropped
+ * between requests, because the application runs in worker mode.
  */
-final class Attachments
+#[AutoconfigureTag('kernel.reset', ['method' => 'reset'])]
+final class Attachments implements ResetInterface
 {
     public const AVATAR = 'avatar';
     public const LOGO = 'logo';
@@ -27,6 +35,15 @@ final class Attachments
      * under this name, so a message holds one file at most.
      */
     public const ATTACHMENT = 'attachment';
+
+    /**
+     * The attachments already read, keyed by record type, identifier and name.
+     * A null value means the record carries no file under that name, which is
+     * different from not read.
+     *
+     * @var array<string, ActiveStorageAttachment|null>
+     */
+    private array $cache = [];
 
     public function __construct(
         private readonly EntityManagerInterface $entityManager,
@@ -52,6 +69,8 @@ final class Attachments
         $this->entityManager->persist($attachment);
         $this->entityManager->flush();
 
+        unset($this->cache[$this->key($attachment->getRecordType(), (int) $attachment->getRecordId(), $attachment->getName())]);
+
         return $attachment;
     }
 
@@ -68,7 +87,52 @@ final class Attachments
 
     public function attachmentFor(object $record, string $name): ?ActiveStorageAttachment
     {
-        return $this->attachments->findOneFor(RailsModelName::of($record), $this->recordId($record), $name);
+        return $this->attachmentForRecord(RailsModelName::of($record), $this->recordId($record), $name);
+    }
+
+    /**
+     * Reads the attachments of many records of the same kind in one query and
+     * keeps them, so that the calls that follow do not each ask the database.
+     *
+     * The records are named by a model name rather than by their class, because
+     * the table is polymorphic and the three room types share one name.
+     *
+     * @param list<int> $recordIds
+     */
+    public function primeFor(string $recordType, array $recordIds, string $name): void
+    {
+        $missing = [];
+
+        foreach ($recordIds as $recordId) {
+            $key = $this->key($recordType, $recordId, $name);
+
+            if (!\array_key_exists($key, $this->cache)) {
+                $missing[$key] = $recordId;
+            }
+        }
+
+        if ([] === $missing) {
+            return;
+        }
+
+        // A record with no file is remembered as null, so the page does not ask
+        // for it again when it renders.
+        foreach (array_keys($missing) as $key) {
+            $this->cache[$key] = null;
+        }
+
+        foreach ($this->attachments->findManyFor($recordType, array_values($missing), $name) as $attachment) {
+            $this->cache[$this->key($attachment->getRecordType(), (int) $attachment->getRecordId(), $attachment->getName())] = $attachment;
+        }
+    }
+
+    /**
+     * Drops what was read. The application runs in worker mode, so a service
+     * lives across requests and the cache must not survive one.
+     */
+    public function reset(): void
+    {
+        $this->cache = [];
     }
 
     public function blobFor(object $record, string $name): ?ActiveStorageBlob
@@ -100,11 +164,16 @@ final class Attachments
      */
     public function detach(object $record, string $name): void
     {
-        foreach ($this->attachments->findAllFor(RailsModelName::of($record), $this->recordId($record), $name) as $attachment) {
+        $recordType = RailsModelName::of($record);
+        $recordId = $this->recordId($record);
+
+        foreach ($this->attachments->findAllFor($recordType, $recordId, $name) as $attachment) {
             $this->entityManager->remove($attachment);
         }
 
         $this->entityManager->flush();
+
+        unset($this->cache[$this->key($recordType, $recordId, $name)]);
     }
 
     /**
@@ -133,6 +202,22 @@ final class Attachments
 
         $this->variants->purgeFor($blob);
         $this->storage->purge($blob);
+    }
+
+    private function attachmentForRecord(string $recordType, int $recordId, string $name): ?ActiveStorageAttachment
+    {
+        $key = $this->key($recordType, $recordId, $name);
+
+        if (\array_key_exists($key, $this->cache)) {
+            return $this->cache[$key];
+        }
+
+        return $this->cache[$key] = $this->attachments->findOneFor($recordType, $recordId, $name);
+    }
+
+    private function key(string $recordType, int $recordId, string $name): string
+    {
+        return $recordType.':'.$recordId.':'.$name;
     }
 
     private function recordId(object $record): int

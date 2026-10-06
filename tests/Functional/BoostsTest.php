@@ -182,6 +182,42 @@ final class BoostsTest extends DatabaseTestCase
         self::assertCount(1, $this->boostsOf($message));
     }
 
+    public function testBoostingAMessageTouchesTheMessageAndItsRoom(): void
+    {
+        $this->runFirstRun();
+        $room = $this->openRoom();
+        $message = $this->postMessage($room, 'First post');
+
+        $beforeMessage = $message->getUpdatedAt();
+        $beforeRoom = $message->getRoom()?->getUpdatedAt();
+        self::assertNotNull($beforeRoom);
+
+        $crawler = $this->client->request('GET', '/messages/'.$message->getId().'/boosts/new');
+        self::assertResponseIsSuccessful();
+
+        $this->client->submit($crawler->selectButton('Submit')->form([
+            'boost[content]' => 'On it',
+        ]), [], ['HTTP_ACCEPT' => 'text/vnd.turbo-stream.html']);
+
+        self::assertResponseRedirects('/messages/'.$message->getId().'/boosts');
+
+        // A boost touches its message, and the message touches the room it is
+        // in, which is what makes a conversation move up the sidebar.
+        $updatedMessage = $this->entityManager()->getRepository(Message::class)->find($message->getId());
+        self::assertNotNull($updatedMessage);
+        self::assertGreaterThan(
+            (float) $beforeMessage->format('U.u'),
+            (float) $updatedMessage->getUpdatedAt()->format('U.u'),
+        );
+
+        $updatedRoom = $this->entityManager()->getRepository(Room::class)->find($room->getId());
+        self::assertNotNull($updatedRoom);
+        self::assertGreaterThan(
+            (float) $beforeRoom->format('U.u'),
+            (float) $updatedRoom->getUpdatedAt()->format('U.u'),
+        );
+    }
+
     private function openRoom(): OpenRoom
     {
         $room = $this->entityManager()->getRepository(OpenRoom::class)->findOneBy([]);

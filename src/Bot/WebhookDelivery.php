@@ -16,6 +16,7 @@ use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Component\Mime\MimeTypesInterface;
 use Symfony\Component\Routing\Generator\UrlGeneratorInterface;
 use Symfony\Contracts\HttpClient\Exception\TimeoutExceptionInterface;
+use Symfony\Contracts\HttpClient\Exception\TransportExceptionInterface;
 use Symfony\Contracts\HttpClient\ResponseInterface;
 
 /**
@@ -34,6 +35,14 @@ use Symfony\Contracts\HttpClient\ResponseInterface;
 final class WebhookDelivery
 {
     public const ENDPOINT_TIMEOUT = 7;
+
+    /**
+     * The most of an answer that is read. A bot is a service the application
+     * does not control, and an answer of unbounded size would otherwise be held
+     * whole in the memory of the worker. Five megabytes leaves room for the
+     * documents a bot legitimately posts back.
+     */
+    public const MAX_BODY_BYTES = 5 * 1024 * 1024;
 
     private const TEXT_CONTENT_TYPES = ['text/html', 'text/plain'];
 
@@ -67,16 +76,22 @@ final class WebhookDelivery
 
             $status = $response->getStatusCode();
             $contentType = $this->contentType($response);
-            $contents = $response->getContent(false);
         } catch (TimeoutExceptionInterface) {
             $this->reply($webhook, $message, sprintf('Failed to respond within %d seconds', self::ENDPOINT_TIMEOUT));
 
+            return;
+        } catch (TransportExceptionInterface) {
+            // A name that does not resolve, a refused connection or a broken
+            // handshake is a failed delivery, not a reason to try again. The
+            // original application makes a single attempt.
             return;
         }
 
         if (200 !== $status) {
             return;
         }
+
+        $contents = $this->readBody($response);
 
         if (null !== $contentType && \in_array($contentType, self::TEXT_CONTENT_TYPES, true)) {
             $this->reply($webhook, $message, $contents);
@@ -186,6 +201,25 @@ final class WebhookDelivery
     {
         $this->index->index($reply);
         $this->broadcast->messageCreated($reply);
+    }
+
+    /**
+     * Reads at most MAX_BODY_BYTES of the answer.
+     *
+     * The body is streamed rather than read whole, so an endpoint that answers
+     * with an endless or enormous body cannot take the worker down with it.
+     */
+    private function readBody(ResponseInterface $response): string
+    {
+        $stream = $response->toStream(false);
+
+        try {
+            $contents = stream_get_contents($stream, self::MAX_BODY_BYTES);
+        } finally {
+            fclose($stream);
+        }
+
+        return false === $contents ? '' : $contents;
     }
 
     /**

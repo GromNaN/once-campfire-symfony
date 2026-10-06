@@ -160,7 +160,9 @@ final class AttachableRenderer
 
     private function userFor(\DOMElement $node): ?User
     {
-        $decoded = $this->decode($node);
+        // A mention is read without its signature, which mirrors the Rails
+        // override that tolerates a rotated secret for User attachments.
+        $decoded = $this->decode($node, verifySignature: false);
 
         if (null === $decoded || RailsModelName::USER !== $decoded['model']) {
             return null;
@@ -183,11 +185,11 @@ final class AttachableRenderer
     /**
      * @return array{model: string, id: string, purpose: ?string}|null
      */
-    private function decode(\DOMElement $node): ?array
+    private function decode(\DOMElement $node, bool $verifySignature = true): ?array
     {
         $sgid = $node->getAttribute('sgid');
 
-        return '' === $sgid ? null : $this->signedIds->decode($sgid);
+        return '' === $sgid ? null : $this->signedIds->decode($sgid, $verifySignature);
     }
 
     private function embed(\DOMElement $node): ?string

@@ -74,6 +74,11 @@ final class BoostsController extends AbstractController
         $boost->setMessage($message);
         $boost->setBooster($user);
 
+        // A boost belongs to its message with a touch, which in turn touches the
+        // room, so giving one counts as activity in both.
+        $message->touch();
+        $message->getRoom()?->touch();
+
         $this->entityManager->persist($boost);
         $this->entityManager->flush();
 
@@ -93,6 +98,11 @@ final class BoostsController extends AbstractController
         if (null === $boost) {
             return new Response('', Response::HTTP_NOT_FOUND);
         }
+
+        // Taking a boost back is a change to the message and the room it is in,
+        // so both are touched, as destroying a boost does in the original.
+        $message->touch();
+        $message->getRoom()?->touch();
 
         $this->entityManager->remove($boost);
         $this->entityManager->flush();

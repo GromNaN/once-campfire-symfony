@@ -271,6 +271,33 @@ final class RoomsTest extends DatabaseTestCase
         self::assertCount(0, $crawler->filter('#system_welcome'));
     }
 
+    public function testPostingAMessageMovesTheRoomUpTheSidebar(): void
+    {
+        $this->runFirstRun();
+        $room = $this->openRoom();
+
+        $before = $room->getUpdatedAt();
+
+        $this->postMessage($room, 'First post');
+
+        $after = $this->findRoom($room->getId())?->getUpdatedAt();
+        self::assertNotNull($after);
+        self::assertGreaterThan((float) $before->format('U.u'), (float) $after->format('U.u'));
+    }
+
+    /**
+     * Posts a message through the composer the way a browser does.
+     */
+    private function postMessage(Room $room, string $body): void
+    {
+        $crawler = $this->client->request('GET', '/rooms/'.$room->getId());
+        $this->client->submit($crawler->selectButton('Send')->form([
+            'message[body]' => $body,
+        ]), [], ['HTTP_ACCEPT' => 'text/vnd.turbo-stream.html']);
+
+        self::assertResponseIsSuccessful();
+    }
+
     /**
      * Fills a room creation page the way the browser does and hands back the
      * form, so that the test can look at it before it is submitted.

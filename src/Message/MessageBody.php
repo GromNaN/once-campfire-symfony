@@ -8,6 +8,7 @@ use App\ActionText\AttachableRenderer;
 use App\ActionText\RichTextRepository;
 use App\ActiveStorage\Attachments;
 use App\Entity\Message;
+use App\Rails\RailsModelName;
 
 /**
  * Reads the body of a message in the form a caller needs.
@@ -31,6 +32,37 @@ final class MessageBody
         private readonly AttachableRenderer $renderer,
         private readonly Attachments $attachments,
     ) {
+    }
+
+    /**
+     * Reads the body and the file of many messages in two queries and keeps
+     * them, so that rendering a page of messages does not run one query per
+     * message for each of them.
+     *
+     * A page, a search result and a refreshed room all show a list of messages,
+     * so each of them primes the page before its templates ask for the bodies
+     * and the files.
+     *
+     * @param list<Message> $messages
+     */
+    public function prime(array $messages): void
+    {
+        $ids = [];
+
+        foreach ($messages as $message) {
+            $id = $message->getId();
+
+            if (null !== $id) {
+                $ids[] = (int) $id;
+            }
+        }
+
+        if ([] === $ids) {
+            return;
+        }
+
+        $this->richTexts->primeFor($ids);
+        $this->attachments->primeFor(RailsModelName::MESSAGE, $ids, Attachments::ATTACHMENT);
     }
 
     /**

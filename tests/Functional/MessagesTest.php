@@ -171,6 +171,20 @@ final class MessagesTest extends DatabaseTestCase
         self::assertNull($this->entityManager()->getRepository(Message::class)->find($message->getId()));
     }
 
+    public function testPostingAMessageTouchesTheRoom(): void
+    {
+        $this->runFirstRun();
+        $room = $this->openRoom();
+
+        $before = $room->getUpdatedAt();
+
+        $this->postMessage($room, 'First post');
+
+        $after = $this->entityManager()->getRepository(Room::class)->find($room->getId())?->getUpdatedAt();
+        self::assertNotNull($after);
+        self::assertGreaterThan((float) $before->format('U.u'), (float) $after->format('U.u'));
+    }
+
     private function openRoom(): OpenRoom
     {
         $room = $this->entityManager()->getRepository(OpenRoom::class)->findOneBy([]);

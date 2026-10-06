@@ -10,6 +10,7 @@ use App\Entity\User;
 use App\Form\Data\MessageData;
 use App\Form\MessageType;
 use App\Http\LastRoom;
+use App\Message\MessageBody;
 use App\Repository\MessageRepository;
 use App\Repository\RoomRepository;
 use App\Security\Voter\AdministerVoter;
@@ -28,6 +29,7 @@ final class RoomsController extends AbstractController
     public function __construct(
         private readonly RoomRepository $rooms,
         private readonly MessageRepository $messages,
+        private readonly MessageBody $body,
         private readonly EntityManagerInterface $entityManager,
     ) {
     }
@@ -102,6 +104,10 @@ final class RoomsController extends AbstractController
      */
     private function roomPage(Room $room, array $messages): Response
     {
+        // The page shows every message of the list, so their bodies and their
+        // files are read in two queries rather than one per message.
+        $this->body->prime($messages);
+
         $response = $this->render('rooms/show.html.twig', [
             'room' => $room,
             'messages' => $messages,

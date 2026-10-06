@@ -57,6 +57,6 @@ RUN chmod +x /usr/local/bin/entrypoint
 EXPOSE 80 443
 
 HEALTHCHECK --interval=30s --timeout=5s --start-period=30s --retries=3 \
-    CMD curl -fsS http://localhost/up || exit 1
+    CMD curl -fsS -H "Host: localhost" http://127.0.0.1/up || exit 1
 
 ENTRYPOINT ["/usr/local/bin/entrypoint"]

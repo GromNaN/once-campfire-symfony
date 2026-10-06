@@ -4,7 +4,7 @@ set -e
 # Campfire keeps all of its state under storage/. Make sure the directories
 # exist before the database connection is opened, because SQLite refuses to
 # create a database inside a missing directory.
-mkdir -p storage/db storage/files storage/backups var
+mkdir -p storage/db storage/files storage/backups storage/sessions var
 
 # The application cannot sign a session or a hub token without its secrets, and
 # the image holds none. Fail here rather than serve requests that cannot work.
@@ -34,6 +34,13 @@ fi
 # cache, so nothing has to be built here.
 if [ "${SKIP_MIGRATIONS:-0}" != "1" ]; then
     php bin/console doctrine:migrations:migrate --no-interaction --allow-no-migration
+fi
+
+# A service may override the command to run its own process instead of the web
+# server. The Messenger worker does this. Without a command the entrypoint
+# starts FrankenPHP as usual.
+if [ "$#" -gt 0 ] && [ "$1" != "frankenphp" ]; then
+    exec "$@"
 fi
 
 exec frankenphp run --config /etc/caddy/Caddyfile "$@"

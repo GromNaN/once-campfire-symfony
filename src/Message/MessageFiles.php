@@ -19,6 +19,12 @@ use Symfony\Component\HttpFoundation\File\UploadedFile;
  */
 final class MessageFiles
 {
+    /**
+     * The largest upload a message may carry. A larger one is refused before
+     * its bytes are read into memory.
+     */
+    private const MAX_SIZE = 100 * 1024 * 1024;
+
     public function __construct(
         private readonly BlobStorage $storage,
         private readonly Attachments $attachments,
@@ -42,11 +48,21 @@ final class MessageFiles
      *
      * The content type is the one the caller declared, which is what the
      * original application stores and what decides how a file is shown. A
-     * client that does not know the type declares nothing useful, so the file
-     * is read in that case rather than stored as an anonymous attachment.
+     * client that declares nothing useful, or something that does not match
+     * the bytes, gets the type detected from the file instead.
      */
     public function attachUpload(Message $message, UploadedFile $file): ActiveStorageBlob
     {
+        $size = $file->getSize();
+
+        if (false !== $size && $size > self::MAX_SIZE) {
+            throw new \InvalidArgumentException(\sprintf(
+                'The file "%s" is larger than the %d MB a message may carry.',
+                $file->getClientOriginalName(),
+                intdiv(self::MAX_SIZE, 1024 * 1024),
+            ));
+        }
+
         return $this->attach(
             $message,
             (string) file_get_contents($file->getPathname()),
@@ -55,14 +71,35 @@ final class MessageFiles
         );
     }
 
-    private function declaredType(UploadedFile $file): ?string
+    /**
+     * The type to store for an upload.
+     *
+     * The declared type comes from the client, so it is only kept when it is a
+     * well formed type that does not contradict what the bytes really are. A
+     * client that declares nothing useful gets the detected type.
+     */
+    private function declaredType(UploadedFile $file): string
     {
         $declared = $file->getClientMimeType();
+        $detected = $file->getMimeType() ?: 'application/octet-stream';
 
-        if (null === $declared || '' === $declared || 'application/octet-stream' === $declared) {
-            return $file->getMimeType() ?: $declared;
+        if (null !== $declared
+            && self::isWellFormedType($declared)
+            && ('application/octet-stream' === $detected || self::categoryOf($declared) === self::categoryOf($detected))
+        ) {
+            return $declared;
         }
 
-        return $declared;
+        return $detected;
+    }
+
+    private static function isWellFormedType(string $type): bool
+    {
+        return 1 === preg_match('~^[a-z0-9][a-z0-9!#$&^_.+-]{0,126}/[a-z0-9][a-z0-9!#$&^_.+-]{0,126}$~i', $type);
+    }
+
+    private static function categoryOf(string $type): string
+    {
+        return strtolower(substr($type, 0, (int) strpos($type, '/')));
     }
 }

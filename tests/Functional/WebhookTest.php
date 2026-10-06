@@ -8,6 +8,7 @@ use App\ActionText\SignedId;
 use App\ActiveStorage\Attachments;
 use App\ActiveStorage\BlobStorage;
 use App\Bot\WebhookClient;
+use App\Bot\WebhookDelivery;
 use App\Entity\DirectRoom;
 use App\Entity\Enum\UserRole;
 use App\Entity\Enum\UserStatus;
@@ -19,6 +20,7 @@ use App\Entity\Webhook;
 use App\Message\MessageBody;
 use App\Message\MessageWriter;
 use Symfony\Component\HttpClient\Exception\TimeoutException;
+use Symfony\Component\HttpClient\Exception\TransportException;
 use Symfony\Component\HttpClient\MockHttpClient;
 use Symfony\Component\HttpClient\Response\MockResponse;
 
@@ -211,6 +213,46 @@ final class WebhookTest extends DatabaseTestCase
         $replies = $this->repliesIn($room, $bot);
         self::assertCount(1, $replies);
         self::assertSame('Failed to respond within 7 seconds', $this->body()->plainText($replies[0]));
+    }
+
+    public function testAnEndpointThatCannotBeReachedIsNotTriedAgain(): void
+    {
+        $this->runFirstRun();
+        $bot = $this->createBot('Recorder', self::ENDPOINT);
+        $room = $this->conversation($bot);
+        $this->mockHttp(static function (): MockResponse {
+            // A name that does not resolve, a refused connection or a broken
+            // handshake all raise the same transport error.
+            throw new TransportException('Could not resolve host');
+        });
+
+        $this->post($room, $this->findUser('alice@example.com'), 'Deploy please');
+
+        // The delivery is a single attempt: a transport error is not retried,
+        // and it says nothing in the room.
+        self::assertCount(0, $this->repliesIn($room, $bot));
+    }
+
+    public function testAnAnswerLargerThanTheLimitIsCutShort(): void
+    {
+        $this->runFirstRun();
+        $bot = $this->createBot('Recorder', self::ENDPOINT);
+        $room = $this->conversation($bot);
+        $this->mockHttp(new MockResponse(str_repeat('a', WebhookDelivery::MAX_BODY_BYTES + 1000), [
+            'response_headers' => ['content-type' => 'application/pdf'],
+        ]));
+
+        $this->post($room, $this->findUser('alice@example.com'), 'Send me the report');
+
+        $replies = $this->repliesIn($room, $bot);
+        self::assertCount(1, $replies);
+
+        $blob = static::getContainer()->get(Attachments::class)->blobFor($replies[0], Attachments::ATTACHMENT);
+        self::assertNotNull($blob);
+
+        // An endpoint that answers with more than the limit cannot take the
+        // worker down with it, so only the limit is read.
+        self::assertSame(WebhookDelivery::MAX_BODY_BYTES, \strlen(static::getContainer()->get(BlobStorage::class)->read($blob)));
     }
 
     public function testAnAnswerThatIsNotSuccessfulIsIgnored(): void

@@ -7,7 +7,9 @@ namespace App\ActionText;
 use App\Entity\ActionTextRichText;
 use App\Repository\ActionTextRichTextRepository;
 use Doctrine\ORM\EntityManagerInterface;
+use Symfony\Component\DependencyInjection\Attribute\AutoconfigureTag;
 use Symfony\Component\HtmlSanitizer\HtmlSanitizerInterface;
+use Symfony\Contracts\Service\ResetInterface;
 
 /**
  * Reads and writes the rich text body of a record.
@@ -15,11 +17,25 @@ use Symfony\Component\HtmlSanitizer\HtmlSanitizerInterface;
  * ActionText stores the body in a polymorphic table instead of on the record
  * itself, so messages are saved first and their body is written right after,
  * which is also what the original application does.
+ *
+ * A page shows a whole page of messages, so reading each body with a query of
+ * its own would be an N+1. The bodies read once are kept here, and a page asks
+ * for all of them at once through primeFor(). The cache is dropped between
+ * requests, because the application runs in worker mode.
  */
-final class RichTextRepository
+#[AutoconfigureTag('kernel.reset', ['method' => 'reset'])]
+final class RichTextRepository implements ResetInterface
 {
     public const MESSAGE_RECORD_TYPE = 'Message';
     public const BODY_NAME = 'body';
+
+    /**
+     * The bodies already read, keyed by record type and identifier. A null
+     * value means the record has no body, which is different from not read.
+     *
+     * @var array<string, ActionTextRichText|null>
+     */
+    private array $cache = [];
 
     /**
      * The sanitizer is the one configured under the name "campfire", which is
@@ -45,11 +61,59 @@ final class RichTextRepository
 
     public function find(int $recordId, string $recordType = self::MESSAGE_RECORD_TYPE): ?ActionTextRichText
     {
-        return $this->richTexts->findOneBy([
+        $key = $this->key($recordId, $recordType);
+
+        if (\array_key_exists($key, $this->cache)) {
+            return $this->cache[$key];
+        }
+
+        return $this->cache[$key] = $this->richTexts->findOneBy([
             'recordType' => $recordType,
             'recordId' => $recordId,
             'name' => self::BODY_NAME,
         ]);
+    }
+
+    /**
+     * Reads the bodies of many records in one query and keeps them, so that
+     * the calls that follow do not each ask the database.
+     *
+     * @param list<int> $recordIds
+     */
+    public function primeFor(array $recordIds, string $recordType = self::MESSAGE_RECORD_TYPE): void
+    {
+        $missing = [];
+
+        foreach ($recordIds as $recordId) {
+            $key = $this->key($recordId, $recordType);
+
+            if (!\array_key_exists($key, $this->cache)) {
+                $missing[$key] = $recordId;
+            }
+        }
+
+        if ([] === $missing) {
+            return;
+        }
+
+        // A record with no body is remembered as null, so the page does not ask
+        // for it again when it renders.
+        foreach (array_keys($missing) as $key) {
+            $this->cache[$key] = null;
+        }
+
+        foreach ($this->richTexts->findBodiesFor(array_values($missing), $recordType, self::BODY_NAME) as $richText) {
+            $this->cache[$this->key($richText->getRecordId(), $richText->getRecordType())] = $richText;
+        }
+    }
+
+    /**
+     * Drops what was read. The application runs in worker mode, so a service
+     * lives across requests and the cache must not survive one.
+     */
+    public function reset(): void
+    {
+        $this->cache = [];
     }
 
     /**
@@ -69,6 +133,8 @@ final class RichTextRepository
         $this->entityManager->persist($richText);
         $this->entityManager->flush();
 
+        $this->cache[$this->key($recordId, $recordType)] = $richText;
+
         return $richText;
     }
 
@@ -80,5 +146,12 @@ final class RichTextRepository
             $this->entityManager->remove($richText);
             $this->entityManager->flush();
         }
+
+        unset($this->cache[$this->key($recordId, $recordType)]);
+    }
+
+    private function key(int $recordId, string $recordType): string
+    {
+        return $recordType.':'.$recordId;
     }
 }

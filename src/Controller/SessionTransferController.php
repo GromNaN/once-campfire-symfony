@@ -59,7 +59,7 @@ final class SessionTransferController extends AbstractController
 
     private function findUser(string $id): ?User
     {
-        $decoded = $this->signedId->decode($id, verifyExpiry: true);
+        $decoded = $this->signedId->decode($id);
 
         if (null === $decoded || 'User' !== $decoded['model'] || SignedId::PURPOSE_TRANSFER !== $decoded['purpose']) {
             return null;

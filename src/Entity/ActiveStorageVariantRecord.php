@@ -26,6 +26,15 @@ class ActiveStorageVariantRecord
     #[ORM\JoinColumn(name: 'blob_id', referencedColumnName: 'id', nullable: false)]
     private ?ActiveStorageBlob $blob = null;
 
+    /**
+     * The processed blob made from the source blob. Rails keeps no such link
+     * because it serves the variant from a derived key; this port stores the
+     * variant as a blob of its own, so the record points at it directly.
+     */
+    #[ORM\ManyToOne(targetEntity: ActiveStorageBlob::class)]
+    #[ORM\JoinColumn(name: 'variant_blob_id', referencedColumnName: 'id', nullable: true)]
+    private ?ActiveStorageBlob $variantBlob = null;
+
     #[ORM\Column]
     private string $variationDigest = '';
 
@@ -42,6 +51,18 @@ class ActiveStorageVariantRecord
     public function setBlob(?ActiveStorageBlob $blob): static
     {
         $this->blob = $blob;
+
+        return $this;
+    }
+
+    public function getVariantBlob(): ?ActiveStorageBlob
+    {
+        return $this->variantBlob;
+    }
+
+    public function setVariantBlob(?ActiveStorageBlob $variantBlob): static
+    {
+        $this->variantBlob = $variantBlob;
 
         return $this;
     }

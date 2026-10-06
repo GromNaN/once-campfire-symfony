@@ -30,11 +30,15 @@ final class RemoveMessage
 
     public function remove(Message $message): void
     {
-        $this->richTexts->remove((int) $message->getId());
-        $this->attachments->purge($message, Attachments::ATTACHMENT);
+        // The row, its body and its file are one deletion, so a failure on any
+        // of them leaves the message whole rather than half removed.
+        $this->entityManager->wrapInTransaction(function () use ($message): void {
+            $this->richTexts->remove((int) $message->getId());
+            $this->attachments->purge($message, Attachments::ATTACHMENT);
 
-        $this->entityManager->remove($message);
-        $this->entityManager->flush();
+            $this->entityManager->remove($message);
+            $this->entityManager->flush();
+        });
 
         $this->broadcast->messageRemoved($message);
     }

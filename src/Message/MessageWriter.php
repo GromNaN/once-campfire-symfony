@@ -52,11 +52,22 @@ final class MessageWriter
             $message->setClientMessageId($clientMessageId);
         }
 
-        $this->entityManager->persist($message);
-        $this->entityManager->flush();
+        // The row, its body and the text index are one write: a failure on any
+        // of them leaves nothing behind rather than a message without a body.
+        $this->entityManager->wrapInTransaction(function () use ($message, $room, $body, $file): void {
+            // A message belongs to its room with a touch, so posting one counts
+            // as activity in the room and moves it up the sidebar.
+            $room->touch();
 
-        $this->write($message, $body, $file);
-        $this->index->index($message);
+            $this->entityManager->persist($message);
+            $this->entityManager->flush();
+
+            $this->write($message, $body, $file);
+            $this->index->index($message);
+        });
+
+        // The message is stored by now, so the browsers watching and the bots
+        // are told once the transaction has committed.
         $this->broadcast->messageCreated($message);
         $this->webhooks->dispatchFor($message);
 
@@ -76,6 +87,7 @@ final class MessageWriter
     public function update(Message $message, ?string $body = null, ?UploadedFile $file = null): void
     {
         $message->touch();
+        $message->getRoom()?->touch();
 
         $this->write($message, $body, $file);
         $this->index->index($message);

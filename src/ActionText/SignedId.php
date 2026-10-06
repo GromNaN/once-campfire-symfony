@@ -12,8 +12,9 @@ use App\Rails\RailsModelName;
  *
  * The wire format matches Rails: the payload is the strict base64 encoding of a
  * JSON document that holds a global id under "_rails.data", followed by "--" and
- * a signature. Reading is deliberately permissive, exactly like the original
- * application, which ignores the signature for User attachments so that a
+ * a signature. The signature is verified by default, so a forged identifier is
+ * refused and an expired one is never read. The only unsigned path is for
+ * ActionText User mentions, which the original application tolerates so that a
  * rotated secret does not orphan every existing mention. Older Rails 7 payloads,
  * which nest a marshalled global id under "_rails.message", are understood too.
  */
@@ -65,14 +66,40 @@ final class SignedId
 
     /**
      * Reads a signed id and returns the model name and the identifier it points
-     * at. The signature is not enforced, which mirrors the tolerant behaviour of
-     * the original implementation.
+     * at. The signature is verified by default, so a forged identifier is
+     * refused. Expiry is always enforced when the payload carries one.
+     *
+     * Passing false for $verifySignature reads the payload without checking the
+     * signature. That path exists for ActionText User mentions alone, mirroring
+     * the Rails override which tolerates a rotated secret there. It must not be
+     * used anywhere a forged identifier could be turned into access.
      *
      * @return array{model: string, id: string, purpose: ?string}|null
      */
-    public function decode(string $sgid, bool $verifyExpiry = false): ?array
+    public function decode(string $sgid, bool $verifySignature = true): ?array
     {
-        $message = explode('--', $sgid, 2)[0] ?? '';
+        if ($verifySignature) {
+            // Rails puts the signature after the first "--". The payload is
+            // base64 of a JSON document and never holds a separator, while the
+            // signature is base64 too and can: it is the first "--" that marks
+            // the boundary, so everything after it is the signature. A missing
+            // separator means the identifier is unsigned, which is only ever
+            // forged.
+            $separator = strpos($sgid, '--');
+
+            if (false === $separator) {
+                return null;
+            }
+
+            $message = substr($sgid, 0, $separator);
+            $signature = substr($sgid, $separator + 2);
+
+            if (!hash_equals($this->sign($message), $signature)) {
+                return null;
+            }
+        } else {
+            $message = explode('--', $sgid, 2)[0] ?? '';
+        }
 
         if ('' === $message) {
             return null;
@@ -92,7 +119,7 @@ final class SignedId
 
         $expiresAt = $decoded['_rails']['exp'] ?? null;
 
-        if ($verifyExpiry && \is_int($expiresAt) && $expiresAt < time()) {
+        if (\is_int($expiresAt) && $expiresAt < time()) {
             return null;
         }
 

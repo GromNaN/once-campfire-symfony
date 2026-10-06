@@ -6,7 +6,9 @@ namespace App\Tests\Functional;
 
 use App\Entity\Account;
 use App\Entity\Membership;
+use App\Entity\Message;
 use App\Entity\OpenRoom;
+use App\Entity\Room;
 use App\Entity\User;
 use App\EventListener\EarlyHintsListener;
 use App\Form\Data\RegistrationData;
@@ -86,6 +88,18 @@ final class RealtimeTest extends DatabaseTestCase
         self::assertNotNull($source->attr('private'));
     }
 
+    public function testAPageAskedForFromAnUnknownMessageIsNotFound(): void
+    {
+        $this->runFirstRun();
+        $room = $this->openRoom();
+
+        // A page is walked from a message, so a cursor that names no message of
+        // the room is a 404 rather than the last page.
+        $this->client->request('GET', '/rooms/'.$room->getId().'/messages?before=999999');
+
+        self::assertResponseStatusCodeSame(404);
+    }
+
     public function testPostingAMessageIsBroadcastToTheRoom(): void
     {
         $this->runFirstRun();
@@ -151,6 +165,107 @@ final class RealtimeTest extends DatabaseTestCase
         self::assertNotNull($this->lastUpdateOn(Topics::userUnreads((int) $bob->getId())));
     }
 
+    public function testTheRefreshStreamCarriesTheMessagesWrittenSince(): void
+    {
+        $this->runFirstRun();
+        $room = $this->openRoom();
+        $this->postMessage($room, 'While you were away');
+
+        // A browser that lost the stream asks for everything written since the
+        // epoch, which is everything the room holds.
+        $this->client->request('GET', '/rooms/'.$room->getId().'/refresh?since=0');
+
+        self::assertResponseIsSuccessful();
+        $content = (string) $this->client->getResponse()->getContent();
+        self::assertStringContainsString('action="append"', $content);
+        self::assertStringContainsString('messages_'.$room->getId(), $content);
+        self::assertStringContainsString('While you were away', $content);
+    }
+
+    public function testTheRefreshStreamReplacesAMessageChangedSince(): void
+    {
+        $this->runFirstRun();
+        $room = $this->openRoom();
+        $message = $this->postMessage($room, 'First post');
+
+        // The window opens just after the message was written, so the message
+        // itself is old news and only the edit that follows falls inside it.
+        $since = $this->millisecondsAfter($message->getCreatedAt());
+
+        $crawler = $this->client->request('GET', '/rooms/'.$room->getId().'/messages/'.$message->getId().'/edit');
+        $this->client->submit($crawler->selectButton('Save changes')->form([
+            'message[body]' => 'Edited post',
+        ]), [], ['HTTP_ACCEPT' => 'text/vnd.turbo-stream.html']);
+
+        $this->client->request('GET', '/rooms/'.$room->getId().'/refresh?since='.$since);
+
+        self::assertResponseIsSuccessful();
+        $content = (string) $this->client->getResponse()->getContent();
+        self::assertStringContainsString('action="replace"', $content);
+        self::assertStringContainsString('message_'.$message->getKey(), $content);
+        self::assertStringNotContainsString('action="append"', $content);
+    }
+
+    public function testTheRefreshOfARoomTheUserIsNotInIsNotFound(): void
+    {
+        $this->runFirstRun();
+
+        $this->client->request('GET', '/rooms/999999/refresh');
+
+        self::assertResponseStatusCodeSame(404);
+    }
+
+    public function testPresenceCountsTheConnection(): void
+    {
+        $this->runFirstRun();
+        $room = $this->openRoom();
+        $alice = $this->findUser('alice@example.com');
+
+        $this->client->request('POST', '/rooms/'.$room->getId().'/presence');
+
+        self::assertResponseStatusCodeSame(204);
+        $membership = $this->membershipOf($room, $alice);
+        self::assertTrue($membership->isConnected());
+        self::assertSame(1, $membership->getConnections());
+    }
+
+    public function testRefreshingThePresenceDoesNotCountANewConnection(): void
+    {
+        $this->runFirstRun();
+        $room = $this->openRoom();
+        $alice = $this->findUser('alice@example.com');
+
+        $this->client->request('POST', '/rooms/'.$room->getId().'/presence');
+        $this->client->request('POST', '/rooms/'.$room->getId().'/presence', ['action' => 'refresh']);
+
+        self::assertResponseStatusCodeSame(204);
+        self::assertSame(1, $this->membershipOf($room, $alice)->getConnections());
+    }
+
+    public function testAbsenceReleasesTheConnection(): void
+    {
+        $this->runFirstRun();
+        $room = $this->openRoom();
+        $alice = $this->findUser('alice@example.com');
+
+        $this->client->request('POST', '/rooms/'.$room->getId().'/presence');
+        $this->client->request('POST', '/rooms/'.$room->getId().'/presence', ['action' => 'absent']);
+
+        self::assertResponseStatusCodeSame(204);
+        $membership = $this->membershipOf($room, $alice);
+        self::assertFalse($membership->isConnected());
+        self::assertSame(0, $membership->getConnections());
+    }
+
+    public function testPresenceOnARoomTheUserIsNotInIsNotFound(): void
+    {
+        $this->runFirstRun();
+
+        $this->client->request('POST', '/rooms/999999/presence');
+
+        self::assertResponseStatusCodeSame(404);
+    }
+
     public function testAPageAnswersWithEarlyHints(): void
     {
         $this->runFirstRun();
@@ -181,6 +296,51 @@ final class RealtimeTest extends DatabaseTestCase
         self::assertNotNull($room);
 
         return $room;
+    }
+
+    /**
+     * Posts a message as the signed in user and returns it.
+     */
+    private function postMessage(Room $room, string $body): Message
+    {
+        $crawler = $this->client->request('GET', '/rooms/'.$room->getId());
+        $this->client->submit($crawler->selectButton('Send')->form([
+            'message[body]' => $body,
+            'message[clientMessageId]' => 'b7c1c6f0-0000-4000-8000-'.bin2hex(random_bytes(6)),
+        ]), [], ['HTTP_ACCEPT' => 'text/vnd.turbo-stream.html']);
+
+        self::assertResponseIsSuccessful();
+
+        $message = $this->entityManager()->getRepository(Message::class)->findOneBy(
+            ['room' => $room],
+            ['id' => 'DESC'],
+        );
+        self::assertNotNull($message);
+
+        return $message;
+    }
+
+    private function membershipOf(Room $room, User $user): Membership
+    {
+        $membership = $this->entityManager()->getRepository(Membership::class)->findOneBy([
+            'room' => $room,
+            'user' => $user,
+        ]);
+        self::assertNotNull($membership);
+
+        return $membership;
+    }
+
+    /**
+     * A moment as the epoch in milliseconds the refresh reads. It is rounded up
+     * to the next millisecond, so the moment itself counts as before the window
+     * and only what happens later falls inside it.
+     */
+    private function millisecondsAfter(?\DateTimeImmutable $at): int
+    {
+        self::assertNotNull($at);
+
+        return (int) ceil(((float) $at->format('U.u')) * 1000);
     }
 
     /**

@@ -18,19 +18,13 @@ use Symfony\Component\Routing\Generator\UrlGeneratorInterface;
  * Tells the readers who are away that a room has something new.
  *
  * The notification names the room in a shared room and the author in a direct
- * conversation, and carries the beginning of what was written, which is what
- * the original application puts on the lock screen. A reader is only told once
- * however many browsers they registered, and the badge they are given counts
- * the rooms they have not caught up with.
+ * conversation, and carries what was written, which is what the original
+ * application puts on the lock screen. A reader is only told once however many
+ * browsers they registered, and the badge they are given counts the rooms they
+ * have not caught up with.
  */
 final class PushNotifier
 {
-    /**
-     * A notification is a glance, not the message itself, and the push service
-     * refuses a payload that is too large, so the body is cut short.
-     */
-    private const BODY_LENGTH = 300;
-
     public function __construct(
         private readonly PushSubscriptionRepository $subscriptions,
         private readonly MembershipRepository $memberships,
@@ -93,7 +87,7 @@ final class PushNotifier
     {
         $room = $message->getRoom();
         $author = $message->getCreator();
-        $text = $this->truncate($this->body->plainText($message));
+        $text = $this->body->plainText($message);
 
         // A direct conversation has no name of its own, so the notification
         // says who wrote rather than where.
@@ -125,14 +119,5 @@ final class PushNotifier
         }
 
         return $ids;
-    }
-
-    private function truncate(string $text): string
-    {
-        if (mb_strlen($text) <= self::BODY_LENGTH) {
-            return $text;
-        }
-
-        return rtrim(mb_substr($text, 0, self::BODY_LENGTH)).'...';
     }
 }

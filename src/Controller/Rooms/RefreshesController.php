@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Controller\Rooms;
 
 use App\Entity\User;
+use App\Message\MessageBody;
 use App\Repository\MessageRepository;
 use App\Repository\RoomRepository;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
@@ -26,6 +27,7 @@ final class RefreshesController extends AbstractController
     public function __construct(
         private readonly RoomRepository $rooms,
         private readonly MessageRepository $messages,
+        private readonly MessageBody $body,
     ) {
     }
 
@@ -40,6 +42,11 @@ final class RefreshesController extends AbstractController
 
         $since = $this->since($request);
         $created = $this->messages->findCreatedAfter($room, $since);
+        $updated = $this->messages->findUpdatedAfter($room, $since, $created);
+
+        // The stream draws every message it carries, so their bodies and their
+        // files are read in two queries rather than one per message.
+        $this->body->prime([...$created, ...$updated]);
 
         // The answer is always a stream: the browser asks for this page only to
         // catch up after a lost connection, and reads the answer as a stream.
@@ -48,7 +55,7 @@ final class RefreshesController extends AbstractController
         return $this->render('rooms/refreshes/show.stream.twig', [
             'room' => $room,
             'new_messages' => $created,
-            'updated_messages' => $this->messages->findUpdatedAfter($room, $since, $created),
+            'updated_messages' => $updated,
         ]);
     }
 

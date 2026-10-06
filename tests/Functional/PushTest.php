@@ -160,6 +160,24 @@ final class PushTest extends DatabaseTestCase
         self::assertSame('Are you there?', $payload->body);
     }
 
+    public function testALongMessageIsSentWhole(): void
+    {
+        $this->runFirstRun();
+        $room = $this->openRoom();
+        $bob = $this->addMember('Bob', 'bob@example.com');
+        $this->involve($room, $bob, MembershipInvolvement::Everything);
+        $this->subscribe($bob);
+
+        // The original application puts the whole text of the message on the
+        // lock screen, so nothing is cut short here either.
+        $body = str_repeat('a', 400);
+        $this->post($room, $this->findUser('alice@example.com'), $body);
+
+        $payload = $this->pushes->lastPayload();
+        self::assertNotNull($payload);
+        self::assertSame('Alice: '.$body, $payload->body);
+    }
+
     public function testTheBadgeCountsTheRoomsTheReaderHasNotCaughtUpWith(): void
     {
         $this->runFirstRun();

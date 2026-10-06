@@ -72,11 +72,18 @@ final class Version20261006081641 extends AbstractMigration
         )');
         $this->addSql('CREATE UNIQUE INDEX index_active_storage_blobs_on_key ON active_storage_blobs ("key")');
 
+        // Rails' active_storage_variant_records has no variant_blob_id column:
+        // it serves a variant from a key derived from the source blob, so there
+        // is nothing to store. This port materialises the variant as a blob of
+        // its own, so the record needs its own link to that blob, both to find
+        // it on a cache hit and to purge it.
         $this->addSql('CREATE TABLE active_storage_variant_records (
             id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
             blob_id bigint NOT NULL,
+            variant_blob_id bigint DEFAULT NULL,
             variation_digest varchar NOT NULL,
-            CONSTRAINT fk_rails_993965df05 FOREIGN KEY (blob_id) REFERENCES active_storage_blobs (id)
+            CONSTRAINT fk_rails_993965df05 FOREIGN KEY (blob_id) REFERENCES active_storage_blobs (id),
+            CONSTRAINT fk_active_storage_variant_records_variant_blob FOREIGN KEY (variant_blob_id) REFERENCES active_storage_blobs (id)
         )');
         $this->addSql('CREATE UNIQUE INDEX index_active_storage_variant_records_uniqueness ON active_storage_variant_records (blob_id, variation_digest)');
 
@@ -119,6 +126,8 @@ final class Version20261006081641 extends AbstractMigration
         $this->addSql('CREATE INDEX index_memberships_on_room_id ON memberships (room_id)');
         $this->addSql('CREATE INDEX index_memberships_on_user_id ON memberships (user_id)');
 
+        // messages.creator_id is an integer in the Rails schema too, so it
+        // matches the Doctrine mapping, which points it at User (id integer).
         $this->addSql('CREATE TABLE messages (
             id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
             client_message_id varchar NOT NULL,
@@ -147,6 +156,11 @@ final class Version20261006081641 extends AbstractMigration
         $this->addSql('CREATE INDEX idx_on_endpoint_p256dh_key_auth_key_7553014576 ON push_subscriptions (endpoint, p256dh_key, auth_key)');
         $this->addSql('CREATE INDEX index_push_subscriptions_on_user_id ON push_subscriptions (user_id)');
 
+        // Rails declares rooms.creator_id as bigint, but the Doctrine mapping
+        // points it at User, whose id is integer, so Doctrine expects integer
+        // here and doctrine:schema:validate would flag a bigint. SQLite is
+        // dynamically typed, so keeping integer on both sides has no runtime
+        // effect and keeps the schema in sync with the mapping.
         $this->addSql('CREATE TABLE rooms (
             id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
             created_at datetime NOT NULL,

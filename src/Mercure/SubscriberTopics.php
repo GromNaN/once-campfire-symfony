@@ -35,13 +35,9 @@ final class SubscriberTopics
             Topics::userReads($id),
         ];
 
-        foreach ($this->memberships->findBy(['user' => $user]) as $membership) {
-            $roomId = $membership->getRoom()?->getId();
-
-            if (null !== $roomId) {
-                $topics[] = Topics::roomMessages($roomId);
-                $topics[] = Topics::roomTyping($roomId);
-            }
+        foreach ($this->memberships->findRoomIdsForUser($user) as $roomId) {
+            $topics[] = Topics::roomMessages($roomId);
+            $topics[] = Topics::roomTyping($roomId);
         }
 
         return $topics;
