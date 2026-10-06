@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "5ed0f2a3e2024d181a78076f315d8f1f",
+    "content-hash": "9467bec4deffd871f914ee707b2a20d8",
     "packages": [
         {
             "name": "bacon/bacon-qr-code",
@@ -8780,16 +8780,16 @@
         },
         {
             "name": "symfony/ux-turbo",
-            "version": "v3.5.1",
+            "version": "3.x-dev",
             "source": {
                 "type": "git",
                 "url": "https://github.com/symfony/ux-turbo.git",
-                "reference": "9a125fad60c75411b9b46478a927588d3e3bab2d"
+                "reference": "de3bdaf96a473d3ea2750bcca09f3d1ee2399177"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/symfony/ux-turbo/zipball/9a125fad60c75411b9b46478a927588d3e3bab2d",
-                "reference": "9a125fad60c75411b9b46478a927588d3e3bab2d",
+                "url": "https://api.github.com/repos/symfony/ux-turbo/zipball/de3bdaf96a473d3ea2750bcca09f3d1ee2399177",
+                "reference": "de3bdaf96a473d3ea2750bcca09f3d1ee2399177",
                 "shasum": ""
             },
             "require": {
@@ -8811,7 +8811,7 @@
                 "symfony/expression-language": "^7.4|^8.0",
                 "symfony/form": "^7.4|^8.0",
                 "symfony/framework-bundle": "^7.4|^8.0",
-                "symfony/mercure-bundle": "^0.3.7|^0.4.1",
+                "symfony/mercure-bundle": "^0.3.7|^0.4.1|^0.5",
                 "symfony/messenger": "^7.4|^8.0",
                 "symfony/property-access": "^7.4|^8.0",
                 "symfony/security-core": "^7.4|^8.0",
@@ -8820,6 +8820,7 @@
                 "symfony/ux-twig-component": "^2.21|^3.0",
                 "symfony/web-profiler-bundle": "^7.4|^8.0"
             },
+            "default-branch": true,
             "type": "symfony-bundle",
             "extra": {
                 "thanks": {
@@ -8857,7 +8858,7 @@
                 "turbo-stream"
             ],
             "support": {
-                "source": "https://github.com/symfony/ux-turbo/tree/v3.5.1"
+                "source": "https://github.com/symfony/ux-turbo/tree/3.x"
             },
             "funding": [
                 {
@@ -8877,7 +8878,7 @@
                     "type": "tidelift"
                 }
             ],
-            "time": "2026-09-19T11:40:16+00:00"
+            "time": "2026-10-02T06:26:17+00:00"
         },
         {
             "name": "symfony/ux-twig-component",
@@ -12810,7 +12811,9 @@
     ],
     "aliases": [],
     "minimum-stability": "stable",
-    "stability-flags": {},
+    "stability-flags": {
+        "symfony/ux-turbo": 20
+    },
     "prefer-stable": true,
     "prefer-lowest": false,
     "platform": {
