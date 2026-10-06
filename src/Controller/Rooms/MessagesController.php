@@ -23,6 +23,7 @@ use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Attribute\Route;
 use Symfony\Component\Security\Http\Attribute\CurrentUser;
 use Symfony\Component\Security\Http\Attribute\IsGranted;
+use Symfony\UX\Turbo\TurboBundle;
 
 /**
  * Messages of a room.
@@ -168,6 +169,11 @@ final class MessagesController extends AbstractController
         if (!TurboStream::wants($request)) {
             return new Response('', Response::HTTP_OK);
         }
+
+        // Turbo announces that it accepts a stream on every form post, so the
+        // announcement alone is not enough to label the answer: this is the
+        // point where the answer really is a stream.
+        $request->setRequestFormat(TurboBundle::STREAM_FORMAT);
 
         return $this->render($template, $context);
     }

@@ -12,6 +12,7 @@ use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Attribute\Route;
 use Symfony\Component\Security\Http\Attribute\CurrentUser;
+use Symfony\UX\Turbo\TurboBundle;
 
 /**
  * Catches a room up after the connection was lost.
@@ -39,6 +40,10 @@ final class RefreshesController extends AbstractController
 
         $since = $this->since($request);
         $created = $this->messages->findCreatedAfter($room, $since);
+
+        // The answer is always a stream: the browser asks for this page only to
+        // catch up after a lost connection, and reads the answer as a stream.
+        $request->setRequestFormat(TurboBundle::STREAM_FORMAT);
 
         return $this->render('rooms/refreshes/show.stream.twig', [
             'room' => $room,

@@ -72,6 +72,24 @@ final class MessagesTest extends DatabaseTestCase
         );
     }
 
+    public function testAPageAskedForWithTheTurboStreamAcceptHeaderIsStillAPage(): void
+    {
+        $this->runFirstRun();
+        $room = $this->openRoom();
+
+        // Turbo announces that it accepts a stream on every form post. The page
+        // a form submission lands on must still be answered as a page: were it
+        // labelled as a stream, the browser would read the whole page as a
+        // stream, render nothing, and lose the debug toolbar with it.
+        $this->client->request('GET', '/rooms/'.$room->getId(), [], [], [
+            'HTTP_ACCEPT' => 'text/vnd.turbo-stream.html, text/html, application/xhtml+xml',
+        ]);
+
+        self::assertResponseIsSuccessful();
+        self::assertResponseHeaderSame('Content-Type', 'text/html; charset=UTF-8');
+        self::assertSelectorExists('#message-area');
+    }
+
     public function testAMessageOfAnotherRoomIsNotFound(): void
     {
         $this->runFirstRun();
