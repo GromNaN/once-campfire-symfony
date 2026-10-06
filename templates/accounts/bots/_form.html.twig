@@ -1,0 +1,63 @@
+{#
+    The fields a chat bot is described by, shared by the page that creates one
+    and the page that edits one.
+
+    A bot has no picture until one is uploaded, so the page that creates one
+    shows the picture the application ships with.
+#}
+{% set avatar_src = bot is defined and bot ? avatar_path(bot) : asset('images/default-bot-avatar.svg') %}
+
+<h1 class="for-screen-reader">Chat Bot Setup</h1>
+
+<label class="align-center center avatar__form gap" data-controller="upload-preview">
+    <div class="btn input--file">
+        <img src="{{ asset('images/camera.svg') }}" alt="" width="20" height="20">
+
+        {{ form_widget(form.avatar, { attr: {
+            class: 'input',
+            accept: 'image/*',
+            'data-upload-preview-target': 'input',
+            'data-action': 'upload-preview#previewImage',
+        } }) }}
+
+        <span class="for-screen-reader">Upload bot avatar</span>
+    </div>
+
+    <div class="avatar input--file txt-xx-large" style="--avatar-size: var(--btn-size);">
+        <img src="{{ avatar_src }}" alt="Bot avatar" width="48" height="48" data-upload-preview-target="image">
+    </div>
+</label>
+
+<div class="flex align-center gap">
+    {{ translation_button('bot_name') }}
+
+    <label class="flex align-center gap flex-item-grow txt-large input input--actor">
+        {{ form_widget(form.name, { attr: {
+            class: 'input',
+            autocomplete: 'name',
+            placeholder: 'Name the bot',
+            autofocus: true,
+            'data-1p-ignore': true,
+        } }) }}
+
+        <img src="{{ asset('images/bot.svg') }}" alt="" width="24" height="24" class="colorize--black">
+    </label>
+</div>
+
+<div class="flex align-center gap">
+    {{ translation_button('webhook_url') }}
+
+    <label class="flex align-center gap flex-item-grow txt-large input input--actor">
+        {{ form_widget(form.webhookUrl, { attr: {
+            class: 'input',
+            placeholder: 'Webhook URL',
+        } }) }}
+
+        <img src="{{ asset('images/web.svg') }}" alt="" width="24" height="24" class="colorize--black">
+    </label>
+</div>
+
+<button type="submit" class="btn btn--reversed center txt-large">
+    <img src="{{ asset('images/check.svg') }}" alt="" width="20" height="20">
+    <span class="for-screen-reader">Save changes</span>
+</button>

@@ -1,0 +1,14 @@
+mercure:
+    hubs:
+        default:
+            # No "url" on purpose. Under FrankenPHP the hub runs in the same
+            # process, so the bundle publishes in memory through mercure_publish()
+            # instead of doing an HTTP round trip. App\Mercure\HubDecorator adds a
+            # fallback for the CLI and the test suite, where that function is absent.
+            public_url: '%env(MERCURE_PUBLIC_URL)%'
+            jwt:
+                secret: '%env(MERCURE_JWT_SECRET)%'
+                # Publishing is restricted to the server. Subscriber tokens are
+                # minted per response with the exact topics the current user may read.
+                publish: '*'
+                subscribe: '*'

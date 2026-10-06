@@ -1,0 +1,33 @@
+{#
+    The picture of a record, with the button that replaces it.
+
+    The picture is shown as it is now, and the button over it opens the file
+    picker. The picture that is picked is shown straight away, before it is
+    sent, so the page answers as soon as the reader chooses.
+
+    Parameters:
+      field        the file field of the form
+      src          the address of the picture shown now
+      label        what the camera button says, for a reader who cannot see it
+      avatar_size  the size of the picture, when the default is not the one wanted
+      extra_action what else the file input should do, beyond showing the picture
+#}
+{% set action = extra_action|default('upload-preview#previewImage') %}
+
+<label class="align-center center avatar__form gap" data-controller="upload-preview">
+    <div class="btn input--file">
+        <img src="{{ asset('images/camera.svg') }}" alt="" width="20" height="20">
+        {{ form_widget(field, { attr: {
+            class: 'input',
+            accept: 'image/*',
+            'data-upload-preview-target': 'input',
+            'data-action': action,
+        } }) }}
+        <span class="for-screen-reader">{{ label }}</span>
+    </div>
+
+    <div class="btn avatar input--file txt-xx-large"{% if avatar_size is defined %} style="--avatar-size: {{ avatar_size }}"{% endif %}>
+        <img src="{{ src }}" alt="{{ label }}" width="48" height="48" data-upload-preview-target="image">
+        <span class="for-screen-reader">Avatar</span>
+    </div>
+</label>

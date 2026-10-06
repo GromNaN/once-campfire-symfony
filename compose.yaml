@@ -1,0 +1,54 @@
+# Production stack: FrankenPHP serves the application and hosts the Mercure hub
+# in the same process, so no separate hub container is needed. The image already
+# holds the compiled assets and a warmed cache, so this stack has nothing to
+# build at start up:
+#
+#   docker compose up -d --build
+#
+# The development stack is compose.dev.yaml, which mounts the source tree and
+# reloads the worker on every change:
+#
+#   docker compose -f compose.yaml -f compose.dev.yaml up -d --build
+services:
+  app:
+    build:
+      context: .
+    restart: unless-stopped
+    ports:
+      - "${APP_PORT:-8080}:80"
+      - "${APP_TLS_PORT:-8443}:443"
+    # The secrets live in .env.local, which is not committed. Compose reads .env
+    # for interpolation but never .env.local, so the file is loaded into the
+    # container instead. "bin/console campfire:generate-secrets" fills it in.
+    env_file:
+      - path: .env.local
+        required: false
+    environment:
+      APP_ENV: prod
+      APP_DEBUG: "0"
+      # The hub runs in the same container, so the app publishes to itself.
+      MERCURE_URL: ${MERCURE_URL:-http://localhost/.well-known/mercure}
+      MERCURE_PUBLIC_URL: ${MERCURE_PUBLIC_URL:-http://localhost:8080/.well-known/mercure}
+      VAPID_SUBJECT: ${VAPID_SUBJECT:-mailto:campfire@localhost}
+      SERVER_NAME: ${SERVER_NAME:-:80}
+      TLS_DOMAIN: ${TLS_DOMAIN:-}
+      APP_VERSION: ${APP_VERSION:-}
+      GIT_REVISION: ${GIT_REVISION:-}
+    volumes:
+      # The application state: the SQLite database, the uploaded files and the
+      # backups. Nothing else is mounted. The image holds the compiled container
+      # and the assets, the cache is written to /tmp and the logs go to the
+      # standard output of the container.
+      - storage:/app/storage
+
+  mailer:
+    image: axllent/mailpit
+    restart: unless-stopped
+    ports:
+      - "${MAILPIT_PORT:-8025}:8025"
+    environment:
+      MP_SMTP_AUTH_ACCEPT_ANY: 1
+      MP_SMTP_AUTH_ALLOW_INSECURE: 1
+
+volumes:
+  storage:

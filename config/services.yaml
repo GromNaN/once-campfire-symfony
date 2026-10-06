@@ -1,0 +1,133 @@
+# yaml-language-server: $schema=../vendor/symfony/dependency-injection/Loader/schema/services.schema.json
+
+# This file is the entry point to configure your own services.
+# Files in the packages/ subdirectory configure your dependencies.
+# See also https://symfony.com/doc/current/service_container/import.html
+
+parameters:
+    # Root of the file storage, kept identical to the original application so
+    # the same directory can be shared or restored from a backup.
+    campfire.storage_dir: '%kernel.project_dir%/storage'
+    campfire.files_dir: '%kernel.project_dir%/storage/files'
+    # Images shipped with the application, served by the controllers that fall
+    # back to them.
+    campfire.images_dir: '%kernel.project_dir%/assets/images'
+    campfire.page_size: 40
+
+    # Reported on every response by the version headers listener.
+    campfire.app_version: '%env(APP_VERSION)%'
+    campfire.git_revision: '%env(GIT_REVISION)%'
+
+services:
+    _defaults:
+        autowire: true
+        autoconfigure: true
+
+    App\:
+        resource: '../src/'
+        exclude:
+            - '../src/DependencyInjection/'
+            - '../src/Entity/'
+            - '../src/Kernel.php'
+
+    # The Mercure hub decorator keeps publishing working from the CLI and the
+    # test suite, where the FrankenPHP native function is unavailable.
+    # A negative priority makes it the outermost decorator, ahead of the
+    # profiler's TraceableHub, so the test short-circuit is never bypassed.
+    App\Mercure\HubDecorator:
+        decorates: mercure.hub.default
+        decoration_priority: -10
+        arguments:
+            $inner: '@.inner'
+            $mercureUrl: '%env(MERCURE_URL)%'
+            $environment: '%kernel.environment%'
+            $httpClient: '@http_client'
+
+    # Signed identifiers are signed with the application secret, the way the
+    # original application signs them with secret_key_base.
+    App\ActionText\SignedId:
+        arguments:
+            $secret: '%kernel.secret%'
+
+    # Uploaded files live under storage/files, the same directory the original
+    # application writes to.
+    App\ActiveStorage\BlobStorage:
+        arguments:
+            $filesDir: '%campfire.files_dir%'
+
+    # The images shipped with the application are read from the assets, so the
+    # same file is served by AssetMapper and by the controllers.
+    App\ActiveStorage\StockImages:
+        arguments:
+            $imagesDir: '%campfire.images_dir%'
+
+    # Reading a page someone linked to must not become a way to reach the
+    # machine the application runs on or the network behind it, so the client
+    # used for link previews refuses private addresses. It is public so a test
+    # can put its own client in front of the guard.
+    app.opengraph.http_client:
+        class: Symfony\Component\HttpClient\NoPrivateNetworkHttpClient
+        arguments: ['@http_client']
+        public: true
+
+    App\Opengraph\Fetcher:
+        arguments:
+            $client: '@app.opengraph.http_client'
+
+    # The client a bot webhook is called with. It is public so a test can put
+    # its own client in its place. See the class for why it is a service of its
+    # own rather than the client the rest of the application calls.
+    App\Bot\WebhookClient:
+        arguments: ['@http_client']
+        public: true
+
+    # Push endpoints belong to browser vendors, but they are still addresses
+    # written into the database, so the client that reaches them refuses private
+    # addresses. It is public so a test can put its own client in front of the
+    # guard.
+    app.push.http_client:
+        class: Symfony\Component\HttpClient\NoPrivateNetworkHttpClient
+        arguments: ['@http_client']
+        public: true
+
+    # The Web Push library speaks PSR-18 and PSR-17. The factories are wired
+    # here rather than discovered, so the library is handed the same guarded
+    # client as the request factory and never reaches the network unguarded.
+    app.push.psr17_factory:
+        class: Nyholm\Psr7\Factory\Psr17Factory
+
+    app.push.psr18_client:
+        class: Symfony\Component\HttpClient\Psr18Client
+        arguments:
+            - '@app.push.http_client'
+            - '@app.push.psr17_factory'
+            - '@app.push.psr17_factory'
+            - '@app.push.psr17_factory'
+
+    # The sender a test stands in for. The payload of a notification is
+    # encrypted before it leaves, so the wording a reader is shown can only be
+    # checked by replacing the sender. It is public for that reason.
+    App\Push\WebPushSender:
+        public: true
+
+    # Sign in attempts limiter, see config/packages/rate_limiter.yaml.
+    Symfony\Component\RateLimiter\RateLimiterFactory $loginLimiter: '@limiter.login'
+
+    App\Doctrine\SqlitePragmaListener:
+        tags:
+            - { name: doctrine.event_listener, event: postConnect }
+
+    App\EventListener\VersionHeadersListener:
+        arguments:
+            $appVersion: '%campfire.app_version%'
+            $gitRevision: '%campfire.git_revision%'
+
+    App\Twig\LayoutExtension:
+        arguments:
+            $appVersion: '%campfire.app_version%'
+
+when@test:
+    parameters:
+        # Tests write the files they upload under var/, so a test run never
+        # touches the storage of the application.
+        campfire.files_dir: '%kernel.project_dir%/var/test/files'

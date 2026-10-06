@@ -1,0 +1,24 @@
+{#
+    The bell of a room, which sets how much the member wants to hear about it.
+
+    The button shows the level the member is at and saves the next one, so
+    clicking it walks the levels round. The level is also the class of the
+    button, which is what the stylesheets use to dim a room set to invisible.
+#}
+{% set room = membership.room %}
+{% set involvement = membership.involvement %}
+
+<turbo-frame id="room_{{ room.id }}_involvement">
+    <form action="{{ path('rooms_involvement_update', { room_id: room.id }) }}" method="post">
+        <input type="hidden" name="_method" value="PUT">
+        <input type="hidden" name="_csrf_token" value="{{ csrf_token('rooms_involvement') }}">
+        <input type="hidden" name="involvement" value="{{ involvement.next(room.direct).value }}">
+
+        <button type="submit" class="btn {{ involvement.value }}"
+                role="checkbox" aria-checked="true" tabindex="0"
+                aria-labelledby="room_{{ room.id }}_involvement_label">
+            <img src="{{ asset('images/notification-bell-' ~ involvement.value ~ '.svg') }}" alt="" width="20" height="20">
+            <span class="for-screen-reader" id="room_{{ room.id }}_involvement_label">{{ involvement.label }}</span>
+        </button>
+    </form>
+</turbo-frame>

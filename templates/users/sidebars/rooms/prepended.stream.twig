@@ -1,0 +1,3 @@
+<turbo-stream action="prepend" targets="shared_rooms">
+    <template>{{ include('users/sidebars/rooms/_shared.html.twig', { room: room, unread: unread|default(false) }) }}</template>
+</turbo-stream>

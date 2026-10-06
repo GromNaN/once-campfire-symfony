@@ -1,0 +1,24 @@
+{#
+    A message whose whole text is a request to play a sound.
+
+    The sound is played when the reader presses the button, and also when the
+    message arrives in a room the reader is looking at, which is what the
+    messages controller asks for. The picture or the line of text beside the
+    button is what the sound shows of itself.
+#}
+<div class="sound"
+     data-controller="sound"
+     data-action="messages:play->sound#play"
+     data-sound-url-value="{{ asset(sound.audioPath) }}">
+    <button type="button" class="btn btn--plain" data-action="sound#play">
+        <span aria-hidden="true">🔊</span>
+        <span class="for-screen-reader">Play {{ sound.name }}</span>
+    </button>
+
+    {% if sound.image %}
+        <img src="{{ asset(sound.image.path) }}" alt="" class="align--middle"
+             width="{{ sound.image.width }}" height="{{ sound.image.height }}">
+    {% else %}
+        {{ sound.text }}
+    {% endif %}
+</div>

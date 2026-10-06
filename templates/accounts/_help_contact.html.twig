@@ -1,0 +1,22 @@
+{#
+    Who to write to, on the pages that have nobody else to ask.
+
+    Signing in and signing up are reached without an account, so the page names
+    the administrator and gives their address. The version of the application is
+    written under it, which is what a reader is asked for when they report
+    something.
+#}
+{% set owner = help_administrator() %}
+
+{% if owner %}
+    <div class="txt-align-center margin-block-double full-width">
+        <a href="mailto:&quot;{{ owner.name }}&quot; <{{ owner.emailAddress }}>" class="btn center" title="Email {{ owner.name }}">
+            <img src="{{ asset('images/lifebuoy.svg') }}" alt="">
+            <span>{{ owner.emailAddress }}</span>
+        </a>
+
+        <div class="txt-align-center center margin-block txt-subtle">
+            Campfire&trade; version <span class="version-badge">{{ version_badge() }}</span>
+        </div>
+    </div>
+{% endif %}

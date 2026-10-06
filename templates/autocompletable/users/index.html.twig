@@ -1,0 +1,17 @@
+{#
+    The users a mention can point at, as the prompt items the editor reads.
+
+    Each item carries what the menu shows, and the mention element the editor
+    inserts when the item is picked, which is the same element a stored body
+    holds.
+#}
+{% for user in users %}<lexxy-prompt-item search="{{ user.name }}" sgid="{{ attachable_sgid(user) }}">
+    <template type="menu">
+        <span class="autocomplete__item">
+            {{ include('users/_avatar.html.twig', { user: user }) }}
+            <span class="autocompletable__name">{{ user.name }}</span>
+        </span>
+    </template>
+    <template type="editor">{{ include('users/_mention.html.twig', { user: user }) }}</template>
+</lexxy-prompt-item>
+{% endfor %}

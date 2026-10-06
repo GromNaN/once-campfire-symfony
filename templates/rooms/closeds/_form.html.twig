@@ -1,0 +1,80 @@
+{#
+    The form of a closed room.
+
+    Access is granted person by person, so the list of people is split in two:
+    the ones already in the room first, then the ones who could be added. The
+    switch above turns the room into an open one.
+#}
+{# A map of the people by identifier. Twig renumbers the integer keys of a map
+   it merges, so the identifier is written with a prefix to stay a string. #}
+{% set users_by_id = {} %}
+{% for user in users %}
+    {% set users_by_id = users_by_id|merge({ ('user-' ~ user.id): user }) %}
+{% endfor %}
+
+{% set selected = [] %}
+{% set unselected = [] %}
+{% for field in form.members %}
+    {% set row = { user: users_by_id['user-' ~ field.vars.value], field: field } %}
+
+    {% if field.vars.checked %}
+        {% set selected = selected|merge([row]) %}
+    {% else %}
+        {% set unselected = unselected|merge([row]) %}
+    {% endif %}
+{% endfor %}
+
+{% embed 'rooms/layouts/form.html.twig' %}
+    {% block access %}
+        <menu class="flex flex-column gap margin-none pad overflow-y constrain-height"
+              data-controller="filter" data-filter-active-class="filter--active" data-filter-selected-class="selected">
+            {% if can_administer %}
+                <li class="flex align-center gap margin-none">
+                    <figure class="avatar flex-item-no-shrink" style="--avatar-border-radius: 0; --avatar-size: 4ch;">
+                        <img src="{{ asset('images/everyone.svg') }}" alt="" class="colorize--black" style="background-color: transparent">
+                        <span class="for-screen-reader">Everyone</span>
+                    </figure>
+
+                    <div class="min-width">
+                        <div class="overflow-ellipsis fill-shade"><strong>Everyone</strong></div>
+                    </div>
+
+                    <hr class="separator" aria-hidden="true">
+
+                    <a href="{{ type_change_path }}" class="btn--faux flex-inline" tabindex="-1" data-turbo-action="replace">
+                        <label for="room_type" class="switch">
+                            <input type="checkbox" id="room_type" class="switch__input">
+                            <span class="switch__btn round"></span>
+                            <span class="for-screen-reader">Give everyone access to this room</span>
+                        </label>
+                    </a>
+                </li>
+
+                <hr class="separator full-width" style="--border-style: solid">
+            {% endif %}
+
+            {% if users|length > 20 %}
+                {{ include('rooms/layouts/_filter_search.html.twig') }}
+            {% endif %}
+
+            <div data-filter-target="list" contents>
+                {% for row in selected %}
+                    {{ include('rooms/closeds/_user.html.twig', { row: row, forced: self_is_forced and row.user.id == app.user.id }) }}
+                {% endfor %}
+
+                {% if selected and unselected %}
+                    <hr class="separator full-width" style="--border-style: solid">
+                {% endif %}
+
+                {% for row in unselected %}
+                    {{ include('rooms/closeds/_user.html.twig', { row: row, forced: self_is_forced and row.user.id == app.user.id }) }}
+                {% endfor %}
+            </div>
+        </menu>
+
+        {# Every person was written above, one by one. The field that gathers
+           them is marked as written too, so that closing the form does not
+           write them a second time. #}
+        {% do form.members.setRendered %}
+    {% endblock %}
+{% endembed %}

@@ -1,0 +1,98 @@
+{#
+    The page shell.
+
+    The structure follows the original application: a navigation bar pinned to
+    the top, the page in the middle, an optional sidebar on the right, and the
+    footer of the page holding the composer of a room. The stylesheets expect
+    those areas by name, so they are what decides where a block lands.
+#}
+<!DOCTYPE html>
+<html lang="{{ app.request.locale|default('en') }}">
+    <head>
+        <meta charset="UTF-8">
+        <title>{% block title %}{{ account_name() }}{% endblock %}</title>
+
+        <meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no, interactive-widget=resizes-content">
+        <meta name="view-transition" content="same-origin">
+        <meta name="color-scheme" content="light dark">
+        <meta name="theme-color" content="#ffffff" media="(prefers-color-scheme: light)">
+        <meta name="theme-color" content="#000000" media="(prefers-color-scheme: dark)">
+        {# The standard name is what browsers ask for; the apple one is still
+           read by Safari when the manifest is not enough. #}
+        <meta name="mobile-web-app-capable" content="yes">
+        <meta name="apple-mobile-web-app-capable" content="yes">
+        <meta name="turbo-prefetch" content="true">
+
+        {% block head %}{% endblock %}
+
+        {# The manifest lets a browser install the application, and the key is
+           what a browser needs to register for push notifications. #}
+        <link rel="manifest" href="{{ path('pwa_manifest') }}">
+        <link rel="icon" href="{{ asset('images/campfire-icon.png') }}" type="image/png">
+        <link rel="apple-touch-icon" href="{{ asset('images/campfire-icon.png') }}">
+        <meta name="vapid-public-key" content="{{ vapid_public_key }}">
+
+        {% block stylesheets %}
+            <link rel="stylesheet" href="{{ asset('styles/app.css') }}">
+
+            {% set custom_styles = account_custom_styles() %}
+            {% if custom_styles %}
+                <style>{{ custom_styles|raw }}</style>
+            {% endif %}
+        {% endblock %}
+
+        {% block javascripts %}
+            {% block importmap %}{{ importmap('app') }}{% endblock %}
+        {% endblock %}
+
+        {% set frankenphp_hot_reload = app.request.server.get('FRANKENPHP_HOT_RELOAD') %}
+        {% if frankenphp_hot_reload %}
+        <meta name="frankenphp-hot-reload:url" content="{{ frankenphp_hot_reload }}">
+        <script src="https://cdn.jsdelivr.net/npm/idiomorph"></script>
+        <script src="https://cdn.jsdelivr.net/npm/frankenphp-hot-reload/+esm" type="module"></script>
+        {% endif %}
+    </head>
+    {# The stylesheets leave room in the navigation bar for the picture of the
+       account, and give an administrator a few things a member does not get,
+       so the page says both of them here. #}
+    <body class="{% block body_class %}{% endblock %}{% if is_granted('CAN_ADMINISTER') %} admin{% endif %}{% if account_has_logo() %} account-has-logo{% endif %}" data-controller="local-time lightbox">
+        {% block stream_source %}{% endblock %}
+
+        <a href="#main-content" class="skip-navigation btn">Skip to main content</a>
+
+        <nav id="nav">{% block nav %}{% endblock %}</nav>
+
+        {% block flash %}
+            {% for type, messages in app.flashes %}
+                {% for message in messages %}
+                    <div class="flash" data-controller="element-removal" data-action="animationend->element-removal#remove">
+                        <div class="flash__inner shadow" {% if type in ['alert', 'error', 'danger'] %}style="--flash-background: var(--color-negative)"{% endif %}>
+                            {% if type in ['alert', 'error', 'danger'] %}
+                                <img src="{{ asset('images/alert.svg') }}" alt="" width="24" height="24" class="colorize--white">
+                            {% else %}
+                                <img src="{{ asset('images/check.svg') }}" alt="" width="24" height="24" class="colorize--white">
+                            {% endif %}
+                        </div>
+                        <span class="for-screen-reader" role="alert" aria-atomic="true">{{ message }}</span>
+                    </div>
+                {% endfor %}
+            {% endfor %}
+        {% endblock %}
+
+        <main id="main-content">
+            {% block body %}{% endblock %}
+
+            <footer id="footer">{% block footer %}{% endblock %}</footer>
+        </main>
+
+        {% block sidebar %}{% endblock %}
+
+        {% block lightbox %}
+            {% include 'layouts/_lightbox.html.twig' %}
+        {% endblock %}
+
+        <a href="https://once.com" id="app-logo" target="_blank" aria-label="Once software from 37signals home page">
+            <img src="{{ asset('images/campfire-icon.png') }}" alt="Campfire logo" width="256" height="216">
+        </a>
+    </body>
+</html>

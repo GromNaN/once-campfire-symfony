@@ -1,0 +1,13 @@
+{#
+    The button that deletes a room, with everything that was said in it.
+#}
+<form action="{{ path('rooms_destroy', { id: room.id }) }}" method="post"
+      data-turbo-confirm="Are you sure you want to delete this room and all messages in it? This can't be undone.">
+    <input type="hidden" name="_method" value="DELETE">
+    <input type="hidden" name="_csrf_token" value="{{ csrf_token('room_destroy') }}">
+
+    <button type="submit" class="btn btn--negative max-width">
+        <img src="{{ asset('images/trash.svg') }}" alt="" width="20" height="20">
+        <span class="overflow-ellipsis">{{ room_display_name(room, app.user) }}</span>
+    </button>
+</form>

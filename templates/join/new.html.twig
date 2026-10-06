@@ -1,0 +1,94 @@
+{#
+    The page someone reaches through the join link.
+
+    It is the same name tag as the first run, with the name and the picture of
+    the account on it instead of the title, because the person is joining
+    something that already exists.
+#}
+{% extends 'base.html.twig' %}
+
+{% block title %}Sign up{% endblock %}
+{% block body_class %}signup{% endblock %}
+
+{% block nav %}
+    <div class="flex-item-justify-end">
+        <a href="{{ path('session_new') }}" class="btn flex-item-justify-end">
+            <img src="{{ asset('images/login-keys.svg') }}" alt="">
+            <span class="for-screen-reader">Sign in</span>
+        </a>
+    </div>
+{% endblock %}
+
+{% block body %}
+    {{ form_start(form, { attr: { class: 'center' } }) }}
+        <section class="nametag u-relative">
+            <div class="flex justify-center align-center pad-block">
+                <img src="{{ asset('images/lanyard.svg') }}" alt="" class="nametag__lanyard">
+            </div>
+
+            <div class="nametag__inner flex flex-column gap">
+                <fieldset class="flex flex-column center-block">
+                    <legend class="txt-align-center flex gap">
+                        <figure class="account-logo avatar">
+                            <img src="{{ path('account_logo_show') }}" alt="Account logo" width="300" height="300">
+                        </figure>
+
+                        <strong class="txt-large">{{ account_name() }}</strong>
+                    </legend>
+
+                    {% include 'layouts/_avatar_field.html.twig' with {
+                        field: form.avatar,
+                        src: asset('images/default-avatar.svg'),
+                        label: 'Upload avatar',
+                    } %}
+                </fieldset>
+
+                <div class="flex align-center gap">
+                    {{ translation_button('user_name') }}
+                    <label class="flex align-center gap flex-item-grow txt-large input input--actor">
+                        {{ form_widget(form.name, { attr: {
+                            class: 'input',
+                            placeholder: 'Name',
+                            autocomplete: 'name',
+                            autofocus: true,
+                            'data-1p-ignore': 'true',
+                        } }) }}
+                        <img src="{{ asset('images/person.svg') }}" alt="" width="24" height="24" class="colorize--black">
+                    </label>
+                </div>
+
+                <div class="flex align-center gap">
+                    {{ translation_button('email_address') }}
+                    <label class="flex align-center gap flex-item-grow txt-large input input--actor">
+                        {{ form_widget(form.emailAddress, { attr: {
+                            class: 'input',
+                            placeholder: 'Email address',
+                            autocomplete: 'username',
+                        } }) }}
+                        <img src="{{ asset('images/email.svg') }}" alt="" width="24" height="24" class="colorize--black">
+                    </label>
+                </div>
+
+                <div class="flex align-center gap">
+                    {{ translation_button('password') }}
+                    <label class="flex align-center gap flex-item-grow txt-large input input--actor">
+                        {{ form_widget(form.password, { attr: {
+                            class: 'input',
+                            placeholder: 'Password',
+                            autocomplete: 'new-password',
+                            maxlength: 72,
+                        } }) }}
+                        <img src="{{ asset('images/password.svg') }}" alt="" width="24" height="24" class="colorize--black">
+                    </label>
+                </div>
+
+                <button type="submit" class="btn btn--reversed center txt-large">
+                    <img src="{{ asset('images/check.svg') }}" alt="">
+                    <span class="for-screen-reader">Save</span>
+                </button>
+            </div>
+        </section>
+    {{ form_end(form) }}
+
+    {{ include('accounts/_help_contact.html.twig') }}
+{% endblock %}

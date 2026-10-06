@@ -1,0 +1,3 @@
+<turbo-stream action="append" targets="boosts_{{ message.key }}">
+    <template>{{ include('rooms/messages/boosts/_boost.html.twig', { message: message, boost: boost }) }}</template>
+</turbo-stream>

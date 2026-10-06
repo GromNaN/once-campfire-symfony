@@ -1,0 +1,25 @@
+framework:
+    html_sanitizer:
+        sanitizers:
+            # Message bodies are rich text written by members, so they are
+            # sanitized on the way in. The safe set of the sanitizer already
+            # covers the formatting elements, so only what it does not cover,
+            # or what needs an attribute it does not allow, is listed here.
+            campfire:
+                allow_safe_elements: true
+                allow_relative_links: true
+                allow_relative_medias: true
+                allowed_link_schemes: ['http', 'https', 'mailto', 'tel']
+                allowed_media_schemes: ['http', 'https', 'data']
+                allow_elements:
+                    # The element ActionText keeps a mention or a link preview
+                    # in. The sanitizer does not know it, so it and its
+                    # attributes are named here. content holds the details of a
+                    # preview as the editor round-trips them, and href and url
+                    # the addresses it points at: the renderer reads them and
+                    # rebuilds the markup, checking every address it finds.
+                    'action-text-attachment': ['sgid', 'content-type', 'url', 'href', 'content', 'filename', 'filesize', 'width', 'height', 'caption', 'presentation']
+                allow_attributes:
+                    # class is not part of the safe set, and a body uses it to
+                    # say how a paragraph or a preview is drawn.
+                    class: ['figure', 'figcaption', 'span', 'div', 'p', 'a', 'img', 'code', 'pre', 'table', 'thead', 'tbody', 'tr', 'td', 'th']

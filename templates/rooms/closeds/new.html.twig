@@ -1,0 +1,11 @@
+{#
+    The page that creates a closed room.
+#}
+{% embed 'rooms/layouts/new.html.twig' %}
+    {% block room_form %}
+        {{ include('rooms/closeds/_form.html.twig', {
+            type_change_path: path('rooms_open_new'),
+            self_is_forced: true,
+        }) }}
+    {% endblock %}
+{% endembed %}

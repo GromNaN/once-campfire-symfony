@@ -1,0 +1,72 @@
+{#
+    A message.
+
+    The element is identified by the client message id the browser chose, so
+    that the message shown straight away and the message the server sends back
+    are the same one. The classes that the stylesheets need to reveal the
+    message are written here rather than added by the browser, so a page without
+    JavaScript still shows its messages.
+#}
+{% set me = app.user and message.creator.id == app.user.id %}
+{% set emoji = message_all_emoji(message) %}
+
+<div id="message_{{ message.key }}"
+     class="message message--formatted{{ first_of_day|default(false) ? ' message--first-of-day' : '' }}{{ me ? ' message--me' : '' }}{{ emoji ? ' message--emoji' : '' }}"
+     data-controller="reply"
+     data-user-id="{{ message.creator.id }}"
+     data-message-id="{{ message.id }}"
+     data-message-timestamp="{{ message.createdAt|date('Uv') }}"
+     data-message-updated-at="{{ message.updatedAt|date('Uv') }}"
+     data-sort-value="{{ message.createdAt|date('Uv') }}"
+     data-messages-target="message">
+    <h2 class="message__day-separator">
+        <time datetime="{{ message.createdAt|date('c') }}" data-local-time-target="date">{{ message.createdAt|date('F j, Y') }}</time>
+    </h2>
+
+    <figure class="avatar message__avatar">
+        <a href="{{ path('user_show', { id: message.creator.id }) }}" title="{{ message.creator.title }}"
+           class="btn avatar" data-turbo-frame="_top">
+            <img src="{{ avatar_path(message.creator) }}" alt="" width="48" height="48">
+        </a>
+    </figure>
+
+    <turbo-frame id="edit_message_{{ message.id }}">
+        <div class="message__body">
+            <div class="message__body-content">
+                <div class="message__meta">
+                    <h3 class="message__heading">
+                        <span class="message__author" title="{{ message.creator.name }}">
+                            <strong data-reply-target="author">{{ message.creator.name }}</strong>
+                        </span>
+
+                        <a href="{{ path('rooms_at_message', { room_id: message.room.id, message_id: message.id }) }}"
+                           class="message__permalink" target="_top">
+                            <time class="message__timestamp" datetime="{{ message.createdAt|date('c') }}" data-local-time-target="time">{{ message.createdAt|date('H:i') }}</time>
+                        </a>
+
+                        <span class="message__room">
+                            <a href="{{ path('rooms_at_message', { room_id: message.room.id, message_id: message.id }) }}"
+                               target="_top" data-reply-target="link">{{ room_display_name(message.room, app.user) }}</a>
+                        </span>
+                    </h3>
+
+                    {{ include('rooms/messages/_actions.html.twig', { message: message }) }}
+                </div>
+
+                <div id="presentation_{{ message.id }}" dir="auto" data-reply-target="body" data-messages-target="body">
+                    {%- set attachment = message_attachment(message) -%}
+                    {%- set sound = attachment ? null : message_sound(message) -%}
+                    {%- if attachment -%}
+                        {% include 'rooms/messages/_attachment.html.twig' with { blob: attachment } %}
+                    {%- elseif sound -%}
+                        {% include 'rooms/messages/_sound.html.twig' with { sound: sound } %}
+                    {%- else -%}
+                        {{ message_body(message) }}
+                    {%- endif -%}
+                </div>
+
+                {{ include('rooms/messages/boosts/_boosts.html.twig', { message: message }) }}
+            </div>
+        </div>
+    </turbo-frame>
+</div>

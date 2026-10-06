@@ -1,0 +1,3 @@
+<turbo-stream action="replace" targets="room_{{ room.id }}_list">
+    <template>{{ include('users/sidebars/rooms/_shared.html.twig', { room: room, unread: unread }) }}</template>
+</turbo-stream>

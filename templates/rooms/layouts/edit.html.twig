@@ -1,0 +1,28 @@
+{#
+    The frame the pages that edit a room share: a way back, the settings panel,
+    and, for whoever administers the room, the button that deletes it.
+
+    Deleting a room takes its messages with it, so the button sits on its own,
+    away from the settings that save.
+#}
+{% extends 'layout.html.twig' %}
+
+{% block title %}Edit settings for {{ room_display_name(room, app.user) }}{% endblock %}
+
+{% block nav %}
+    <div class="flex-item-justify-start">
+        {{ include('layouts/_back_link.html.twig', { url: last_room_url() }) }}
+    </div>
+{% endblock %}
+
+{% block main %}
+    <section class="panel txt-align-center" style="view-transition-name: edit-room-{{ room.id }}">
+        {% block room_form %}{% endblock %}
+    </section>
+
+    {% if can_administer %}
+        <section class="panel txt-align-center">
+            {{ include('rooms/layouts/_delete_room.html.twig', { room: room }) }}
+        </section>
+    {% endif %}
+{% endblock %}

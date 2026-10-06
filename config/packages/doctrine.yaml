@@ -1,0 +1,58 @@
+doctrine:
+    dbal:
+        url: '%env(resolve:DATABASE_URL)%'
+
+        profiling_collect_backtrace: '%kernel.debug%'
+
+        # Tables and columns keep the exact names used by the Rails schema,
+        # so the same SQLite file can be read by both applications.
+        types:
+            rails_datetime: App\Doctrine\Type\RailsDateTimeType
+
+        # SQLite declares the accounts.settings column as "json", which is what
+        # Rails writes. DBAL does not map that name back on its own, so reading
+        # the schema back would fail without this.
+        mapping_types:
+            json: json
+            datetime: rails_datetime
+
+        # The full text index is an FTS5 virtual table whose columns carry no
+        # type, which the schema manager cannot read back. Its own migration
+        # creates and maintains it, so the schema tools leave it and its shadow
+        # tables alone.
+        schema_filter: '~^(?!message_search_index)~'
+
+    orm:
+        validate_xml_mapping: true
+        naming_strategy: doctrine.orm.naming_strategy.underscore
+        auto_mapping: true
+        mappings:
+            App:
+                type: attribute
+                is_bundle: false
+                dir: '%kernel.project_dir%/src/Entity'
+                prefix: 'App\Entity'
+                alias: App
+
+when@test:
+    doctrine:
+        dbal:
+            profiling_collect_backtrace: false
+
+when@prod:
+    doctrine:
+        orm:
+            query_cache_driver:
+                type: pool
+                pool: doctrine.system_cache_pool
+            result_cache_driver:
+                type: pool
+                pool: doctrine.result_cache_pool
+
+    framework:
+        cache:
+            pools:
+                doctrine.result_cache_pool:
+                    adapter: cache.app
+                doctrine.system_cache_pool:
+                    adapter: cache.system

@@ -1,0 +1,49 @@
+{#
+    The settings of a conversation.
+
+    A conversation is named after the people in it, so there is nothing to
+    rename and no one to add: the page shows who is in it, and the button that
+    deletes it along with everything that was said.
+#}
+{% extends 'layout.html.twig' %}
+
+{% set title = room_display_name(room, app.user) %}
+{% set members = room.members|length > 1 ? room.members|filter(user => user.id != app.user.id) : room.members %}
+
+{% block title %}Edit settings for {{ title }}{% endblock %}
+
+{% block nav %}
+    <div class="flex-item-justify-start">
+        {{ include('layouts/_back_link.html.twig', { url: last_room_url() }) }}
+    </div>
+{% endblock %}
+
+{% block main %}
+    <div class="panel txt-align-center">
+        <section class="directs--edit margin-block-end">
+            {% for user in members %}
+                <div class="member flex flex-column gap fill-shade pad border-radius">
+                    <figure class="avatar center" style="--avatar-border-radius: 10ch; --avatar-size: 10ch;">
+                        <a href="{{ path('user_show', { id: user.id }) }}" title="{{ user.title }}" class="btn avatar"
+                           data-turbo-frame="_top">
+                            <img src="{{ avatar_path(user) }}" alt="" width="48" height="48" loading="lazy">
+                        </a>
+                    </figure>
+
+                    <strong>{{ user.name }}</strong>
+                </div>
+            {% endfor %}
+        </section>
+
+        <form action="{{ path('rooms_destroy', { id: room.id }) }}" method="post"
+              data-turbo-confirm="Are you sure you want to delete this ping and all messages in it? This can't be undone.">
+            <input type="hidden" name="_method" value="DELETE">
+            <input type="hidden" name="_csrf_token" value="{{ csrf_token('room_destroy') }}">
+
+            <button type="submit" class="btn btn--negative center" aria-label="Delete Ping">
+                <img src="{{ asset('images/trash.svg') }}" alt="" width="20" height="20">
+                Ping
+            </button>
+        </form>
+    </div>
+{% endblock %}

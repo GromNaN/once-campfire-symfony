@@ -1,0 +1,11 @@
+{#
+    The page that edits a closed room, where access is granted and revoked.
+#}
+{% embed 'rooms/layouts/edit.html.twig' %}
+    {% block room_form %}
+        {{ include('rooms/closeds/_form.html.twig', {
+            type_change_path: path('rooms_open_edit', { id: room.id }),
+            self_is_forced: false,
+        }) }}
+    {% endblock %}
+{% endembed %}

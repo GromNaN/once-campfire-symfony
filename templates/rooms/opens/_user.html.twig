@@ -1,0 +1,25 @@
+{#
+    One row of the list of people of an open room.
+
+    Everyone on the account is in an open room, so the row only names them and
+    marks them as having access.
+#}
+<li class="flex align-center gap margin-none" data-value="{{ user.name|lower }}">
+    <figure class="avatar flex-item-no-shrink" style="--avatar-size: 4ch;">
+        <a href="{{ path('user_show', { id: user.id }) }}" title="{{ user.title }}" class="btn avatar"
+           data-turbo-frame="_top">
+            <img src="{{ avatar_path(user) }}" alt="" width="48" height="48" loading="lazy">
+        </a>
+    </figure>
+
+    <div class="min-width">
+        <div class="overflow-ellipsis fill-shade"><strong>{{ user.name }}</strong></div>
+    </div>
+
+    <hr class="separator" aria-hidden="true">
+
+    {% if can_administer %}
+        <img src="{{ asset('images/check.svg') }}" width="20" height="20"
+             class="colorize--black flex-item-no-shrink" alt="">
+    {% endif %}
+</li>

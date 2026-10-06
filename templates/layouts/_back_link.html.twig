@@ -1,0 +1,10 @@
+{#
+    The way back out of a page that is not a room.
+
+    It leads where the reader came from, which the helper works out, unless the
+    page names its own destination.
+#}
+<a href="{{ url|default(link_back_url()) }}" class="btn">
+    <img src="{{ asset('images/arrow-left.svg') }}" alt="" width="20" height="20">
+    <span class="for-screen-reader">Go Back</span>
+</a>

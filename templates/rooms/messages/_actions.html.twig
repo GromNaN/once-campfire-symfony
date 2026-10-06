@@ -1,0 +1,83 @@
+{#
+    What can be done with a message.
+
+    Everything sits behind the options button, which opens as a popup. The quick
+    reactions save straight away, and the rest of the actions act on the message
+    itself.
+#}
+{% set permalink = url('rooms_at_message', { room_id: message.room.id, message_id: message.id }) %}
+{% set attachment = message_attachment(message) %}
+
+<div class="message__actions" data-controller="soft-keyboard">
+    <details class="position-relative"
+             data-controller="popup"
+             data-action="keydown.esc->popup#close toggle->popup#toggle click@document->popup#closeOnClickOutside"
+             data-popup-orientation-top-class="popup-orientation-top">
+        <summary class="btn message__action-btn message__options-btn">
+            <img src="{{ asset('images/menu-dots-horizontal.svg') }}" alt="" width="20" height="20" class="colorize--black">
+            <span class="for-screen-reader">Message options</span>
+        </summary>
+
+        <div class="message__actions-menu border shadow" data-popup-target="menu">
+            <div class="quick-boosts">
+                {% for character, title in boost_reactions() %}
+                    <form action="{{ path('messages_boosts_create', { message_id: message.id }) }}" method="post"
+                          data-turbo-frame="boosting_{{ message.key }}" data-action="popup#close">
+                        {# The quick boosts post the same form as the boost
+                           dialog, so they carry the token of that form. It is
+                           a stateless token, which is what lets a message
+                           broadcast to another reader still carry it. #}
+                        <input type="hidden" name="boost[_token]" value="{{ csrf_token('submit') }}">
+                        <input type="hidden" name="boost[content]" value="{{ character }}">
+
+                        <button type="submit" class="btn message__action-btn" title="{{ title }}" data-emoji="{{ character }}">
+                            <figure class="margin-none boost-character">{{ character }}</figure>
+                            <span class="for-screen-reader">{{ title }}</span>
+                        </button>
+                    </form>
+                {% endfor %}
+
+                <a href="{{ path('messages_boosts_new', { message_id: message.id }) }}"
+                   class="btn message__action-btn message__boost-btn"
+                   data-turbo-frame="new_boost_{{ message.key }}"
+                   data-action="soft-keyboard#open popup#close">
+                    <img src="{{ asset('images/boost.svg') }}" alt="" width="20" height="20" class="colorize--black">
+                    <span class="for-screen-reader">New boost</span>
+                </a>
+            </div>
+
+            <div class="flex flex-wrap border-top margin-block-start-half pad-block-start-half message__actions-grid">
+                {% if attachment %}
+                    <a href="{{ blob_path(attachment, disposition: 'attachment') }}"
+                       class="btn message__action-btn center full-width" title="Download" aria-label="Download">
+                        <img src="{{ asset('images/download.svg') }}" alt="" width="20" height="20" class="colorize--black">
+                    </a>
+
+                    <button type="button" class="btn message__action-btn center full-width"
+                            title="Share" aria-label="Share"
+                            data-controller="share" data-action="share#share" data-share-value="{{ permalink }}">
+                        <img src="{{ asset('images/share.svg') }}" alt="" width="20" height="20" class="colorize--black">
+                    </button>
+                {% else %}
+                    <button type="button" class="btn message__action-btn center full-width"
+                            title="Reply" aria-label="Reply" data-action="reply#reply">
+                        <img src="{{ asset('images/reply.svg') }}" alt="" width="20" height="20" class="colorize--black">
+                    </button>
+                {% endif %}
+
+                <button type="button" class="btn message__action-btn center full-width"
+                        title="Copy link" aria-label="Copy link"
+                        data-controller="clipboard" data-action="clipboard#copy" data-clipboard-value="{{ permalink }}">
+                    <img src="{{ asset('images/link.svg') }}" alt="" width="20" height="20" class="colorize--black">
+                </button>
+
+                <a href="{{ path('rooms_messages_edit', { room_id: message.room.id, id: message.id }) }}"
+                   class="btn message__action-btn center full-width message__edit-btn"
+                   data-turbo-frame="edit_message_{{ message.id }}"
+                   title="Edit" aria-label="Edit">
+                    <img src="{{ asset('images/pencil.svg') }}" alt="" width="20" height="20" class="colorize--black">
+                </a>
+            </div>
+        </div>
+    </details>
+</div>

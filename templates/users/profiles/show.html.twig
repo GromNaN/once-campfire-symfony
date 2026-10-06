@@ -1,0 +1,146 @@
+{#
+    The profile of the signed in user: their picture, their name, the details
+    they sign in with, and the rooms they belong to.
+
+    The picture is uploaded through the label that shows it, and a field left
+    empty is not applied, so saving the page without typing a password keeps
+    the current one.
+#}
+{% extends 'layout.html.twig' %}
+
+{% block title %}{{ user.name }}{% endblock %}
+
+{% block nav %}
+    <div class="flex-item-justify-start">
+        {{ include('layouts/_back_link.html.twig') }}
+    </div>
+
+    <div class="flex-item-justify-end">
+        <form action="{{ path('session_destroy') }}" method="post" data-controller="sessions">
+            <input type="hidden" name="_method" value="DELETE">
+            <input type="hidden" name="_csrf_token" value="{{ csrf_token('logout') }}">
+            <input type="hidden" name="push_subscription_endpoint" value=""
+                   data-sessions-target="pushSubscriptionEndpoint">
+
+            <button type="submit" class="btn" data-action="sessions#logout:prevent">
+                <img src="{{ asset('images/logout.svg') }}" alt="">
+                <span class="for-screen-reader">Log out</span>
+            </button>
+        </form>
+    </div>
+{% endblock %}
+
+{% block body %}
+    <section class="panel flex flex-column gap" style="view-transition-name: avatar-{{ user.id }}">
+        {{ form_start(form, { attr: { class: 'flex flex-column gap', 'data-controller': 'form' } }) }}
+            <div class="align-center center avatar__form gap" data-controller="upload-preview">
+                <label class="btn" for="{{ form.avatar.vars.id }}">
+                    <img src="{{ asset('images/camera.svg') }}" alt="" width="20" height="20">
+                    <span class="for-screen-reader">Upload avatar</span>
+                </label>
+
+                <label class="btn avatar input--file txt-xx-large">
+                    <img src="{{ avatar_path(user) }}" alt="" width="300" height="300"
+                         data-upload-preview-target="image">
+                    {{ form_widget(form.avatar, { attr: {
+                        class: 'input',
+                        'data-upload-preview-target': 'input',
+                        'data-action': 'upload-preview#previewImage change->form#submit',
+                    } }) }}
+                    <span class="for-screen-reader">Avatar</span>
+                </label>
+
+                <span></span>
+            </div>
+
+            <div class="flex flex-column gap">
+                <div class="flex align-center gap">
+                    {{ translation_button('user_name') }}
+
+                    <label class="flex align-center gap flex-item-grow input input--actor">
+                        {{ form_widget(form.name, { attr: {
+                            class: 'input txt-large',
+                            autocomplete: 'name',
+                            placeholder: 'Enter your name',
+                            autofocus: true,
+                        } }) }}
+                        <img src="{{ asset('images/person.svg') }}" alt="" width="24" height="24" class="colorize--black">
+                    </label>
+                </div>
+
+                <div class="flex align-center gap">
+                    {{ translation_button('email_address') }}
+
+                    <label class="flex align-center gap flex-item-grow input input--actor">
+                        {{ form_widget(form.emailAddress, { attr: {
+                            class: 'input txt-large',
+                            autocomplete: 'username',
+                            placeholder: 'Enter your email address',
+                        } }) }}
+                        <img src="{{ asset('images/email.svg') }}" alt="" width="24" height="24" class="colorize--black">
+                    </label>
+                </div>
+
+                <div class="flex align-center gap">
+                    {{ translation_button('update_password') }}
+
+                    <label class="flex align-center gap flex-item-grow input input--actor">
+                        {{ form_widget(form.password, { attr: {
+                            class: 'input txt-large',
+                            autocomplete: 'new-password',
+                            placeholder: 'Change password',
+                        } }) }}
+                        <img src="{{ asset('images/password.svg') }}" alt="" width="24" height="24" class="colorize--black">
+                    </label>
+                </div>
+
+                <div class="flex align-start gap">
+                    {{ translation_button('bio') }}
+
+                    <label class="flex align--center gap flex-item--grow input input--actor">
+                        {{ form_widget(form.bio, { attr: {
+                            class: 'input txt-large',
+                            placeholder: 'A few words about yourself...',
+                        } }) }}
+                        <img src="{{ asset('images/bio.svg') }}" alt="" width="24" height="24" class="colorize--black">
+                    </label>
+                </div>
+
+                <button type="submit" class="btn btn--reversed center txt-large">
+                    <img src="{{ asset('images/check.svg') }}" alt="" width="20" height="20">
+                    <span class="for-screen-reader">Save changes</span>
+                </button>
+            </div>
+        {{ form_end(form) }}
+
+        {% if has_avatar %}
+            <form action="{{ path('user_avatar_destroy', { user_id: signed_id(user, 'avatar') }) }}" method="post" class="flex center">
+                <input type="hidden" name="_method" value="DELETE">
+                <input type="hidden" name="_csrf_token" value="{{ csrf_token('user_avatar_destroy') }}">
+
+                <button type="submit" class="btn btn--negative txt-small">
+                    <img src="{{ asset('images/minus.svg') }}" alt="" width="20" height="20">
+                    <span class="for-screen-reader">Delete avatar</span>
+                </button>
+            </form>
+        {% endif %}
+
+        <div class="margin-block pad-inline pad-block fill-shade border-radius">
+            <menu class="flex flex-column gap margin-none pad">
+                {% for membership in shared_memberships %}
+                    {{ include('users/profiles/_membership.html.twig', { membership: membership }) }}
+                {% endfor %}
+
+                {% if direct_memberships is not empty and shared_memberships is not empty %}
+                    <hr class="separator full-width" style="--border-style: solid">
+                {% endif %}
+
+                {% for membership in direct_memberships %}
+                    {{ include('users/profiles/_membership.html.twig', { membership: membership }) }}
+                {% endfor %}
+            </menu>
+        </div>
+
+        {{ include('users/profiles/_transfer.html.twig', { user: user }) }}
+    </section>
+{% endblock %}

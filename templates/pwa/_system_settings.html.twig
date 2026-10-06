@@ -1,0 +1,69 @@
+{#
+    How to allow notifications in the system of the reader.
+
+    This is the part that only applies to an application installed on the
+    device, which is why it is hidden when the page runs in a browser tab.
+#}
+{% set p = platform() %}
+
+<details class="notifications-help hide-in-browser" data-notifications-target="details">
+    <summary class="btn">
+        <img src="{{ asset('images/external/gear.svg') }}" alt="" width="20" height="20">
+        <strong>Check your {{ p.operatingSystem }} settings</strong>
+        <img src="{{ asset('images/disclosure.svg') }}" alt="" width="10" height="10" class="disclosure">
+    </summary>
+
+    {% if p.isFirefox and p.isAndroid %}
+        <ol>
+            <li>Tap the <em><img src="{{ asset('images/menu-dots-vertical.svg') }}" alt="More options" width="16" height="16"></em> menu button.</li>
+            <li>Tap <em>Settings</em>.</li>
+            <li>Tap <em>Notifications</em>.</li>
+            <li>Tap <em><img src="{{ asset('images/external/switch.svg') }}" alt="the toggle button" width="22" height="22"></em> to <em>Allow {{ p.browser|capitalize }} notifications</em>.</li>
+        </ol>
+    {% elseif p.isEdge and p.isDesktop %}
+        <ol>
+            <li>Click <em>Start</em>, then <em>Settings</em>.</li>
+            <li>Go to <em>System &gt; Notification</em>.</li>
+            <li>Click <em><img src="{{ asset('images/external/switch.svg') }}" alt="the toggle button" width="22" height="22"></em> <em>ON</em> for Campfire.</li>
+        </ol>
+    {% elseif (p.isFirefox or p.isChrome) and p.isDesktop %}
+        <ol>
+            {% if p.isWindows %}
+                <li>Click <em>Start</em>, then <em>Settings</em>.</li>
+                <li>Go to <em>System &gt; Notification</em>.</li>
+                <li>Click <em><img src="{{ asset('images/external/switch.svg') }}" alt="the toggle button" width="22" height="22"></em> <em>ON</em> for Campfire.</li>
+            {% else %}
+                <li>Click <em aria-label="the Apple menu">&#63743;</em> in the top left.</li>
+                <li>Click <em>System Settings&#8230;</em>.</li>
+                <li>Click <em>Notifications</em>.</li>
+                <li>Click <em>Campfire</em>.</li>
+                <li>Click <em><img src="{{ asset('images/external/switch.svg') }}" alt="the allow notifications switch" width="22" height="22"></em> to <em>Allow notifications</em>.</li>
+            {% endif %}
+        </ol>
+    {% elseif p.isSafari and p.isDesktop %}
+        <ol>
+            <li>Click <em aria-label="the Apple menu">&#63743;</em> in the top left.</li>
+            <li>Click <em>System Settings&#8230;</em>.</li>
+            <li>Click <em>Notifications</em>.</li>
+            <li>Click <em>Campfire</em>.</li>
+            <li>Click <em><img src="{{ asset('images/external/switch.svg') }}" alt="the allow notifications switch" width="22" height="22"></em> to <em>Allow notifications</em>.</li>
+        </ol>
+    {% elseif (p.isSafari or p.isChrome) and p.isIos %}
+        <ol>
+            <li>Open the <em><img src="{{ asset('images/external/gear.svg') }}" alt="" width="20" height="20"></em> Settings app.</li>
+            <li>Scroll to and tap <em>Campfire</em>.</li>
+            <li>Tap <em>Notifications</em>.</li>
+            <li>Tap <em><img src="{{ asset('images/external/switch.svg') }}" alt="the allow notifications switch button" width="22" height="22"></em> to <em>Allow Notifications</em>.</li>
+        </ol>
+    {% elseif p.isChrome and p.isAndroid %}
+        <ol>
+            <li>Open the <em><img src="{{ asset('images/external/gear.svg') }}" alt="" width="20" height="20"></em> Settings app.</li>
+            <li>Tap <em>Notifications</em>.</li>
+            <li>Tap <em>App notifications</em>.</li>
+            <li>Scroll to <em>Campfire</em>.</li>
+            <li>Tap <em><img src="{{ asset('images/external/switch.svg') }}" alt="the switch" width="22" height="22"></em> to <em>Allow Notifications</em>.</li>
+        </ol>
+    {% else %}
+        <p>Ensure notifications are allowed for {{ p.browser|capitalize }} in your system settings.</p>
+    {% endif %}
+</details>

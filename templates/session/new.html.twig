@@ -1,0 +1,65 @@
+{#
+    The page someone signs in on.
+
+    The card shakes when the sign in is refused, which is the answer the page
+    gives: nothing is said about which of the two fields was wrong, because
+    saying it would tell a stranger which addresses have an account.
+#}
+{% extends 'base.html.twig' %}
+
+{% block title %}Sign in{% endblock %}
+
+{% block head %}
+    {# The page is reached from a sign out or from a link, so it is always
+       fetched rather than shown from a copy kept in the browser. #}
+    <meta name="turbo-visit-control" content="reload">
+{% endblock %}
+
+{% block body %}
+    <section class="txt-align-center">
+        <div class="panel{{ app.flashes('alert') is not empty ? ' shake' : '' }}">
+            <figure class="account-logo avatar center margin-block-end txt-xx-large">
+                <img src="{{ path('account_logo_show') }}" alt="Account logo" width="300" height="300">
+            </figure>
+
+            {{ form_start(form, { action: path('session_create'), attr: { class: 'flex flex-column gap' } }) }}
+                <fieldset class="flex flex-column gap center-block upad">
+                    <legend class="txt-large txt-align-center"><strong>{{ account_name() }}</strong></legend>
+
+                    <div class="flex align-center gap">
+                        {{ translation_button('email_address') }}
+                        <label class="flex align-center gap input input--actor txt-large">
+                            {{ form_widget(form.emailAddress, { attr: {
+                                class: 'input',
+                                placeholder: 'Enter your email address',
+                                autofocus: true,
+                                autocomplete: 'username',
+                            } }) }}
+                            <img src="{{ asset('images/email.svg') }}" alt="" width="24" height="24" class="colorize--black">
+                        </label>
+                    </div>
+
+                    <div class="flex align-center gap">
+                        {{ translation_button('password') }}
+                        <label class="flex align-center gap input input--actor txt-large">
+                            {{ form_widget(form.password, { attr: {
+                                class: 'input',
+                                placeholder: 'Enter your password',
+                                autocomplete: 'current-password',
+                                maxlength: 72,
+                            } }) }}
+                            <img src="{{ asset('images/password.svg') }}" alt="" width="24" height="24" class="colorize--black">
+                        </label>
+                    </div>
+
+                    <button type="submit" name="log_in" class="btn btn--reversed center txt-large">
+                        <img src="{{ asset('images/arrow-right.svg') }}" alt="">
+                        <span class="for-screen-reader">Go</span>
+                    </button>
+                </fieldset>
+            {{ form_end(form) }}
+        </div>
+
+        {{ include('accounts/_help_contact.html.twig') }}
+    </section>
+{% endblock %}

@@ -1,0 +1,29 @@
+{#
+    The devices a reader registered for push notifications.
+
+    A reader can send themselves a test notification to check that a device
+    receives one, and drop a device they no longer use.
+#}
+{% extends 'layout.html.twig' %}
+
+{% block title %}Push notification subscriptions{% endblock %}
+
+{% block nav %}
+    <div class="flex-item-justify-start">
+        {{ include('layouts/_back_link.html.twig', { url: last_room_url() }) }}
+    </div>
+{% endblock %}
+
+{% block body %}
+    <section class="panel panel--wide flex flex-column gap">
+        <h1 class="txt-align-center txt-large margin-none">Push Notification Subscriptions</h1>
+
+        <div class="pad-inline fill-shade border-radius" id="push_subscriptions">
+            <menu class="pad flex flex-column gap">
+                {% for subscription in subscriptions %}
+                    {{ include('users/push_subscriptions/_push_subscription.html.twig', { subscription: subscription }) }}
+                {% endfor %}
+            </menu>
+        </div>
+    </section>
+{% endblock %}

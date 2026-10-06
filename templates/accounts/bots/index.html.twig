@@ -1,0 +1,43 @@
+{#
+    The chat bots of the account.
+
+    A bot runs outside the application, so each of them is shown with the
+    commands that post into the rooms it belongs to.
+#}
+{% extends 'layout.html.twig' %}
+
+{% block title %}Chat bots{% endblock %}
+
+{% block nav %}
+    <div class="flex-item-justify-start">
+        {{ include('layouts/_back_link.html.twig', { url: path('account_edit') }) }}
+    </div>
+{% endblock %}
+
+{% block body %}
+    <section class="panel panel--wide txt-align-center flex flex-column position-relative" style="view-transition-name: chat-bots">
+        <div class="flex align-center gap">
+            <div class="panel__button">
+                {{ translation_button('chat_bots') }}
+            </div>
+
+            <div class="pad-inline-double center">
+                <h1 class="margin-none">Chat bots</h1>
+                <p class="margin-none-block-start">With Chat bots, other sites and services can post updates directly to {{ account_name() }}.</p>
+
+                <a href="{{ path('account_bot_new') }}" class="btn btn--reversed txt-large" aria-label="Add a chat bot">
+                    <img src="{{ asset('images/bot.svg') }}" alt="" width="20" height="20">
+                    <img src="{{ asset('images/add.svg') }}" alt="" width="20" height="20">
+                </a>
+            </div>
+        </div>
+
+        <div class="pad-inline pad-block-start">
+            <menu class="flex flex-column gap margin-none pad">
+                {% for entry in bots %}
+                    {{ include('accounts/bots/_bot.html.twig', { bot: entry.bot, commands: entry.commands }) }}
+                {% endfor %}
+            </menu>
+        </div>
+    </section>
+{% endblock %}

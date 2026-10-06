@@ -1,0 +1,54 @@
+{#
+    The CSS an administrator adds to the account.
+
+    It is served in a style element on every page, so the page warns that a
+    mistake here is visible to everyone.
+#}
+{% extends 'layout.html.twig' %}
+
+{% block title %}Custom styles{% endblock %}
+
+{% block nav %}
+    <div class="flex-item-justify-start">
+        {{ include('layouts/_back_link.html.twig', { url: path('account_edit') }) }}
+    </div>
+{% endblock %}
+
+{% block body %}
+    <section class="panel panel--wide txt-align-center flex flex-column position-relative" style="view-transition-name: custom-styles">
+        {{ form_start(form, { attr: {
+            class: 'flex flex-column gap',
+            'data-controller': 'form',
+            'data-action': 'keydown.ctrl+enter->form#submit keydown.meta+enter->form#submit',
+        } }) }}
+            <div class="panel__button">
+                {{ translation_button('custom_styles') }}
+            </div>
+
+            <div class="pad-inline-double margin-inline">
+                <h1 class="margin-none">Custom CSS</h1>
+                <p class="flex flex-wrap align-center justify-center gap margin-none-block-start" style="--column-gap: 0.5ch; --row-gap: 0">
+                    <span>Add custom CSS styles.</span>
+                    <img src="{{ asset('images/alert.svg') }}" class="flex-inline colorize--black" width="16" height="16" alt="">
+                    <span>Use Caution: you could break things.</span>
+                </p>
+            </div>
+
+            <label class="flex align-start gap flex-item-grow">
+                {{ form_widget(form.customStyles, { attr: {
+                    class: 'input input--code txt--small',
+                    placeholder: 'Add CSS styles...',
+                    autocomplete: 'off',
+                    spellcheck: 'false',
+                    autocorrect: 'off',
+                    autocapitalize: 'off',
+                } }) }}
+            </label>
+
+            <button type="submit" class="btn btn--reversed center txt-large">
+                <img src="{{ asset('images/check.svg') }}" alt="" width="20" height="20">
+                <span class="for-screen-reader">Save changes</span>
+            </button>
+        {{ form_end(form) }}
+    </section>
+{% endblock %}

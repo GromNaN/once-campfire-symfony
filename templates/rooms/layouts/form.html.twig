@@ -1,0 +1,42 @@
+{#
+    The fields shared by the pages that create and edit a room.
+
+    The name is asked for when the reader administers the room, and shown as a
+    heading otherwise. Below it, the page fills the access block with whatever
+    decides who is in the room: the whole account for an open room, a list of
+    people for a closed one.
+#}
+{{ form_start(form, { attr: { 'data-controller': 'form' } }) }}
+    <div class="flex align-center gap">
+        {% if can_administer %}
+            {{ translation_button('room_name') }}
+
+            <label class="flex-item-grow txt-large">
+                {{ form_widget(form.name, { attr: {
+                    class: 'input full-width',
+                    placeholder: 'Name the room',
+                    'data-turbo-permanent': true,
+                    'data-action': 'keydown.enter->form#submit:prevent',
+                } }) }}
+                <span class="for-screen-reader">Name this room</span>
+            </label>
+
+            {{ form_errors(form.name) }}
+        {% else %}
+            <h1 class="flex-item-grow txt-x-large">{{ room.name }}</h1>
+        {% endif %}
+    </div>
+
+    <hr class="margin-block borderless">
+
+    <section class="room-access margin-block pad-inline fill-shade border-radius">
+        {% block access %}{% endblock %}
+    </section>
+
+    {% if can_administer %}
+        <button type="submit" class="btn btn--reversed txt-large center">
+            <img src="{{ asset('images/check.svg') }}" alt="" width="20" height="20">
+            <span class="for-screen-reader">Save</span>
+        </button>
+    {% endif %}
+{{ form_end(form) }}

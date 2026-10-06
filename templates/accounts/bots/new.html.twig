@@ -1,0 +1,20 @@
+{#
+    The page that sets up a new chat bot.
+#}
+{% extends 'layout.html.twig' %}
+
+{% block title %}New chat bot{% endblock %}
+
+{% block nav %}
+    <div class="flex-item-justify-start">
+        {{ include('layouts/_back_link.html.twig', { url: path('account_bots_index') }) }}
+    </div>
+{% endblock %}
+
+{% block body %}
+    <section class="panel">
+        {{ form_start(form, { attr: { class: 'flex flex-column gap' } }) }}
+            {{ include('accounts/bots/_form.html.twig', { form: form }) }}
+        {{ form_end(form) }}
+    </section>
+{% endblock %}

@@ -1,0 +1,39 @@
+{#
+    What a browser too old to run the application is shown.
+
+    The page is reached before anything else, so it says what to do rather than
+    what went wrong: update, and here are the versions that work.
+#}
+{% extends 'base.html.twig' %}
+
+{% block title %}{{ platform().isAppleMessages ? 'Campfire' : 'Unsupported browser' }}{% endblock %}
+
+{% block body %}
+    <div class="panel center">
+        <header>
+            <h1 class="txt-x-large txt-tight-lines txt-align-center margin-none-block-start margin-block-end">
+                Upgrade to a supported web browser
+            </h1>
+
+            <div class="flex align-start gap">
+                {{ translation_button('incompatible_browser_messsage') }}
+                <p class="margin-none-block-start">
+                    Campfire requires a modern web browser. Please use one of the browsers
+                    listed below and make sure auto-updates are enabled.
+                </p>
+            </div>
+        </header>
+
+        <div class="browser-list flex align-center flex-wrap gap justify-center margin-block">
+            {% for browser, version in supported_browsers() %}
+                <div class="browser flex flex-column">
+                    <img src="{{ asset('images/browsers/' ~ browser ~ '.svg') }}" alt="" class="center">
+                    <div class="flex flex-column align-center margin-block-start-half">
+                        <strong>{{ browser|capitalize }}</strong>
+                        <span>{{ version }}+</span>
+                    </div>
+                </div>
+            {% endfor %}
+        </div>
+    </div>
+{% endblock %}

@@ -1,0 +1,33 @@
+# Development stack: the same image as production, with the source tree mounted
+# over it and the FrankenPHP worker watching for changes, so an edit is picked up
+# without a rebuild.
+#
+#   docker compose -f compose.yaml -f compose.dev.yaml up -d --build
+#
+# The production stack is the plain "docker compose up".
+services:
+  app:
+    environment:
+      APP_ENV: dev
+      APP_DEBUG: "1"
+      SERVER_NAME: ":80"
+      MAILER_DSN: smtp://mailer:1025
+      MERCURE_URL: http://localhost/.well-known/mercure
+      MERCURE_PUBLIC_URL: http://localhost:8080/.well-known/mercure
+
+      # The directories the worker reloads on. var/ and storage/ are left out on
+      # purpose: the worker writes them while it runs, and watching them would
+      # restart it in a loop.
+      FRANKENPHP_WATCH: "/app/src /app/templates /app/config /app/translations /app/assets /app/public"
+    volumes:
+      - .:/app
+      # The server configuration is read from the source tree, so a change to
+      # the hub or the worker settings is picked up by a restart, not a rebuild.
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - storage:/app/storage
+      - var:/app/var
+
+volumes:
+  # Development keeps the cache and the logs across restarts, so that a restart
+  # does not pay for the container build again.
+  var:

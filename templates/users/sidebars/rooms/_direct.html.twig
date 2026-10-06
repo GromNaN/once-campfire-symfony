@@ -1,0 +1,33 @@
+{#
+    A direct conversation in the sidebar, shown as the people taking part in it.
+#}
+{% set room = membership.room %}
+{% set others = room.members|filter(member => member.id != membership.user.id) %}
+{% set shown = others is empty ? [membership.user] : others %}
+
+<a href="{{ path('rooms_show', { id: room.id }) }}"
+   id="room_{{ room.id }}_list"
+   class="direct{{ membership.isUnread ? ' unread' : '' }}"
+   data-rooms-list-target="room" data-badge-dot-target="unread" data-sorted-list-target="item"
+   data-room-id="{{ room.id }}" data-sorted-list-number="{{ room.updatedAt|date('U') }}">
+    {% if shown|length > 1 %}
+        <div class="avatar__group">
+            {% for member in shown|slice(0, 4) %}
+                <span class="avatar">
+                    <img src="{{ avatar_path(member) }}" alt="" width="20" height="20">
+                </span>
+            {% endfor %}
+        </div>
+    {% else %}
+        <span class="avatar">
+            <img src="{{ avatar_path(shown|first) }}" alt="" width="48" height="48">
+        </span>
+    {% endif %}
+
+    <span class="direct__author flex align-center gap max-width min-width border-radius txt-small">
+        <span class="txt-nowrap overflow-ellipsis">
+            <span class="for-screen-reader">Ping with</span>
+            {{ shown|map(member => member.name|split(' ')|first)|join(' + ') }}
+        </span>
+    </span>
+</a>

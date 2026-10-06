@@ -1,0 +1,40 @@
+{#
+    The shape of a message the reader has just written.
+
+    It is not a message yet: it is a script holding the markup the browser fills
+    in and shows while the server saves the real one. The placeholders are
+    replaced by the client message id, the body, the classes, and the time, and
+    the saved message carries the same identifier, so Turbo drops this one when
+    the saved one is appended.
+#}
+<script type="text/template" data-messages-target="template">
+    <div class="message message--me message--formatted $messageClasses$"
+         id="message_$clientMessageId$"
+         data-user-id="{{ app.user.id }}"
+         data-message-timestamp="$messageTimestamp$"
+         data-messages-target="message">
+        <h2 class="message__day-separator">
+            <time datetime="$messageDatetime$" data-local-time-target="date"></time>
+        </h2>
+
+        <figure class="avatar message__avatar">
+            <img src="{{ avatar_path(app.user) }}" alt="" width="48" height="48">
+        </figure>
+
+        <div class="message__body">
+            <div class="message__body-content">
+                <div class="message__meta">
+                    <h3 class="message__heading">
+                        <span class="message__author"><strong>{{ app.user.name }}</strong></span>
+
+                        <span class="message__permalink">
+                            <time class="message__timestamp" datetime="$messageDatetime$" data-local-time-target="time"></time>
+                        </span>
+                    </h3>
+                </div>
+
+                $body$
+            </div>
+        </div>
+    </div>
+</script>

@@ -1,0 +1,55 @@
+{#
+    The link that signs someone in on another device.
+
+    It is a signed identifier of the person, so it is shown only to an
+    administrator and only for a person who is still around. Whoever holds the
+    link is that person until it expires, which is why it can be scanned,
+    copied or handed to the share sheet of the device.
+#}
+{% set transfer_url = url('session_transfer', { id: signed_id(user, 'transfer', 14400) }) %}
+
+<fieldset>
+    <legend class="gap">
+        <img src="{{ asset('images/laptop.svg') }}" alt="" width="36" height="36" class="colorize--black">
+        <img src="{{ asset('images/transfer.svg') }}" alt="" width="36" height="36" class="colorize--black">
+        <img src="{{ asset('images/mobile-phone.svg') }}" alt="" width="36" height="36" class="colorize--black">
+    </legend>
+
+    <div class="flex flex-column gap">
+        {% if app.user.id != user.id %}
+            <div class="flex align-center gap justify-center">
+                <img src="{{ asset('images/crown.svg') }}" width="16" height="16" alt="" class="flex-item-no-shrink colorize--black">
+                <label for="session_transfer_url">Share to get them back into their account</label>
+            </div>
+        {% else %}
+            <label for="session_transfer_url" class="for-screen-reader">Use this link to login automatically on another device</label>
+        {% endif %}
+
+        <input type="text" class="input" value="{{ transfer_url }}" id="session_transfer_url" readonly>
+
+        <div class="flex align-center center gap">
+            <a href="{{ qr_code_path(transfer_url) }}" class="btn"
+               data-lightbox-target="image" data-action="lightbox#open"
+               data-lightbox-url-value="{{ qr_code_path(transfer_url) }}">
+                <span class="for-screen-reader">Show auto-login QR code</span>
+                <img src="{{ asset('images/qr-code.svg') }}" alt="" width="20" height="20" class="colorize--black">
+            </a>
+
+            <button type="button" class="btn"
+                    data-controller="clipboard" data-action="clipboard#copy"
+                    data-clipboard-value="{{ transfer_url }}" data-clipboard-success-class="btn--success">
+                <span class="for-screen-reader">Copy auto-login link</span>
+                <img src="{{ asset('images/copy-paste.svg') }}" alt="" width="20" height="20" class="colorize--black">
+            </button>
+
+            <button type="button" class="btn" hidden
+                    data-controller="share" data-action="share#share"
+                    data-share-url-value="{{ transfer_url }}"
+                    data-share-title-value="Your sign-in link"
+                    data-share-text-value="This is your own private sign-in URL, DO NOT SHARE IT. Use it to sign-in on another device or if you get locked out.">
+                <span class="for-screen-reader">Share auto-login link</span>
+                <img src="{{ asset('images/share.svg') }}" alt="" width="20" height="20" class="colorize--black">
+            </button>
+        </div>
+    </div>
+</fieldset>

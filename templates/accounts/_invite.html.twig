@@ -1,0 +1,53 @@
+{#
+    The link that lets someone join the account.
+
+    The address is shown in a read only field so it can be selected by hand,
+    and the buttons beside it copy it, show it as a QR code, or hand it to the
+    share sheet of the device. Only an administrator may replace the code.
+#}
+<div class="flex flex-column align-center gap">
+    <label class="flex flex-column gap full-width" style="--row-gap: 0.5em">
+        <strong id="invite_label" class="invite-label">Share to invite more people</strong>
+
+        <span class="flex align-center gap input input--actor fill-white">
+            <img src="{{ asset('images/person-add.svg') }}" alt="" width="20" height="20" class="colorize--black">
+            <input type="text" class="input" id="invite_url" value="{{ join_url }}" aria-labelledby="invite_label" readonly>
+        </span>
+    </label>
+
+    <div class="flex align-center gap">
+        <a href="{{ qr_code_path(join_url) }}" class="btn"
+           data-lightbox-target="image" data-action="lightbox#open"
+           data-lightbox-url-value="{{ qr_code_path(join_url) }}">
+            <span class="for-screen-reader">Show join link QR code</span>
+            <img src="{{ asset('images/qr-code.svg') }}" alt="" width="20" height="20" class="colorize--black">
+        </a>
+
+        <button type="button" class="btn"
+                data-controller="clipboard" data-action="clipboard#copy"
+                data-clipboard-value="{{ join_url }}" data-clipboard-success-class="btn--success">
+            <span class="for-screen-reader">Copy join link</span>
+            <img src="{{ asset('images/copy-paste.svg') }}" alt="" width="20" height="20" class="colorize--black">
+        </button>
+
+        <button type="button" class="btn" hidden
+                data-controller="share" data-action="share#share"
+                data-share-url-value="{{ join_url }}"
+                data-share-title-value="Link to join Campfire"
+                data-share-text-value="Hit this link to join me in Campfire and start chatting.">
+            <span class="for-screen-reader">Share join link</span>
+            <img src="{{ asset('images/share.svg') }}" alt="" width="20" height="20" class="colorize--black">
+        </button>
+
+        {% if can_administer %}
+            <form action="{{ path('account_join_code_create') }}" method="post">
+                <input type="hidden" name="_csrf_token" value="{{ csrf_token('account_join_code_create') }}">
+
+                <button type="submit" class="btn btn--regenerate">
+                    <img src="{{ asset('images/refresh.svg') }}" alt="" width="20" height="20" class="colorize--black">
+                    <span class="for-screen-reader">Regenerate join link</span>
+                </button>
+            </form>
+        {% endif %}
+    </div>
+</div>

@@ -1,0 +1,24 @@
+# yaml-language-server: $schema=../vendor/symfony/routing/Loader/schema/routing.schema.json
+
+# This file is the entry point to configure the routes of your app.
+# Methods with the #[Route] attribute are automatically imported.
+# See also https://symfony.com/doc/current/routing.html
+
+# To list all registered routes, run the following command:
+#   bin/console debug:router
+
+controllers:
+    resource: routing.controllers
+
+# Pages that only render a template have no controller class.
+
+qr_code:
+    path: /qr_code/{id}
+    controller: Symfony\Bundle\FrameworkBundle\Controller\TemplateController
+    defaults:
+        template: 'qr_codes/show.svg.twig'
+        _format: 'svg'
+        maxAge: 31536000
+        private: false
+    requirements:
+        id: '[A-Za-z0-9_=-]+'

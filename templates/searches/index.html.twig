@@ -1,0 +1,132 @@
+{#
+    Search.
+
+    The field posts, which records the query, and the page it lands on reads.
+    The results carry the same message element as a room, so a result looks like
+    the message it is. The sidebar of the page holds the searches of the reader
+    rather than the rooms, because that is what they are working with here.
+#}
+{% extends 'layout.html.twig' %}
+
+{% block title %}Search{% endblock %}
+{% block body_class %}sidebar searches{% endblock %}
+
+{% block nav %}
+    {% if query %}
+        <div class="searches__query flex align-center gap pad-block-start-half">
+            <div class="btn btn--reversed btn--faux align-center gap txt-nowrap">
+                <span class="overflow-ellipsis">&ldquo;{{ query }}&rdquo;</span>
+                <span class="flex-item-no-shrink">{{ messages|length }}</span>
+            </div>
+        </div>
+    {% endif %}
+
+    <div class="searches__recents align-center gap pad-block-half overflow-y overflow-hide-scrollbar">
+        {% for search in recent_searches %}
+            <a href="{{ path('searches_index', { q: search.query }) }}" class="align-center gap room btn txt-nowrap">
+                <span class="overflow-ellipsis">&ldquo;{{ search.query }}&rdquo;</span>
+            </a>
+        {% endfor %}
+
+        {% if recent_searches is not empty %}
+            <form action="{{ path('searches_clear') }}" method="post" class="searches__btn-form">
+                <input type="hidden" name="_method" value="DELETE">
+                <input type="hidden" name="_csrf_token" value="{{ csrf_token('searches_clear') }}">
+
+                <button type="submit" class="btn searches__btn"
+                        data-turbo-confirm="Are you sure you want to clear your recent searches?">
+                    <img src="{{ asset('images/broom.svg') }}" alt="">
+                    <span class="for-screen-reader">Clear recent searches</span>
+                </button>
+            </form>
+        {% endif %}
+    </div>
+{% endblock %}
+
+{% block sidebar %}
+    <aside id="sidebar" data-controller="toggle-class" data-toggle-class-toggle-class="open">
+        <div class="rooms position-relative flex flex-column gap overflow-y overflow-hide-scrollbar">
+            {% for search in recent_searches %}
+                <a href="{{ path('searches_index', { q: search.query }) }}" class="align-center gap room btn txt-nowrap">
+                    <span class="overflow-ellipsis">&ldquo;{{ search.query }}&rdquo;</span>
+                </a>
+            {% endfor %}
+
+            {% if recent_searches is not empty %}
+                <form action="{{ path('searches_clear') }}" method="post">
+                    <input type="hidden" name="_method" value="DELETE">
+                    <input type="hidden" name="_csrf_token" value="{{ csrf_token('searches_clear') }}">
+
+                    <button type="submit" class="btn searches__btn"
+                            data-turbo-confirm="Are you sure you want to clear your recent searches?">
+                        <img src="{{ asset('images/broom.svg') }}" alt="">
+                        <span class="for-screen-reader">Clear recent searches</span>
+                    </button>
+                </form>
+            {% endif %}
+        </div>
+    </aside>
+{% endblock %}
+
+{% block body %}
+    <div id="message-area" class="message-area">
+        <div class="message-area--empty min-width center">
+            <figure class="center pad">
+                <img src="{{ asset('images/search.svg') }}" alt="" class="colorize--black translucent">
+            </figure>
+        </div>
+
+        <div id="search-results" class="messages searches__results"
+             data-controller="search-results"
+             data-search-results-target="messages"
+             data-search-results-me-class="message--me"
+             data-search-results-threaded-class="message--threaded"
+             data-search-results-mentioned-class="message--mentioned"
+             data-search-results-formatted-class="message--formatted">
+            {% set previous_day = null %}
+            {% for message in messages %}
+                {{ include('rooms/messages/_message.html.twig', {
+                    message: message,
+                    first_of_day: previous_day != message.createdAt|date('Y-m-d'),
+                }) }}
+                {% set previous_day = message.createdAt|date('Y-m-d') %}
+            {% endfor %}
+        </div>
+    </div>
+{% endblock %}
+
+{% block footer %}
+    <div class="composer flex align-end gap">
+        {% if return_to_room %}
+            <a href="{{ path('rooms_show', { id: return_to_room.id }) }}"
+               class="btn flex-item-no-shrink margin-block-end"
+               style="view-transition-name: input-switcher; --btn-border-radius: 0.5em">
+                <img src="{{ asset('images/arrow-left.svg') }}" alt="">
+                <span class="for-screen-reader">Exit search</span>
+            </a>
+        {% endif %}
+
+        <form action="{{ path('searches_create') }}" method="post"
+              class="margin-block flex-item-grow contain flex align-center gap"
+              data-controller="form" data-action="keydown.esc->form#cancel">
+            <div class="composer__input flex align-center flex-item-grow gap full-width input input--actor min-width">
+                <img src="{{ asset('images/search.svg') }}" width="20" height="20" alt=""
+                     class="composer__input-hint colorize--black" style="view-transition-name: input-btn;">
+
+                <input type="search" name="q" value="{{ query }}" id="q"
+                       class="searches__input input flex-item-grow" role="searchbox" aria-label="search"
+                       autofocus required>
+
+                <a href="{{ path('searches_index') }}" data-form-target="cancel" role="button" class="searches__reset">
+                    <img src="{{ asset('images/remove.svg') }}" alt="" width="14" height="14" class="colorize--black">
+                    <span class="for-screen-reader">Clear search field</span>
+                </a>
+
+                <button type="submit" class="btn btn--reversed flex-item-no-shrink txt-small" style="--btn-border-radius: 0.5em">
+                    <img src="{{ asset('images/arrow-up.svg') }}" alt="">
+                    <span class="for-screen-reader">Search</span>
+                </button>
+            </div>
+        </form>
+    </div>
+{% endblock %}

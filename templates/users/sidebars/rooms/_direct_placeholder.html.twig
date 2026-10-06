@@ -1,0 +1,16 @@
+{#
+    A one click entry point to start a conversation with someone the user is
+    not talking to yet.
+#}
+<a href="{{ path('rooms_direct_new', { user: user.id }) }}" class="direct borderless fill-transparent unpad">
+    <span class="avatar">
+        <img src="{{ avatar_path(user) }}" alt="" width="48" height="48">
+    </span>
+
+    <span class="direct__author flex align-center gap max-width min-width border-radius txt-small">
+        <span class="txt-nowrap overflow-ellipsis">
+            <span class="for-screen-reader">Start a ping with</span>
+            {{ user.name|split(' ')|first }}
+        </span>
+    </span>
+</a>

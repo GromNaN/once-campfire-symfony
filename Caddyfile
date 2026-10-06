@@ -1,0 +1,52 @@
+# FrankenPHP serves both the Symfony application and the Mercure hub.
+# The hub is reachable at /.well-known/mercure, which is the default path
+# expected by the Symfony Mercure bundle.
+{
+	frankenphp {
+		# The application runs in worker mode, which keeps the kernel booted
+		# between requests.
+		worker {
+			file ./public/index.php
+			env APP_ENV {$APP_ENV:prod}
+			env APP_DEBUG {$APP_DEBUG:0}
+			num {$FRANKENPHP_WORKER_NUM:2}
+
+			# Restart the worker when a watched file changes. The default points
+			# at the application source, which the production image never writes
+			# to, so production effectively never reloads. Development widens the
+			# list to every directory that is edited. var/ and storage/ are left
+			# out on purpose: the worker writes them while it runs, and watching
+			# them would restart it in a loop.
+			watch {$FRANKENPHP_WATCH:/app/src}
+		}
+	}
+
+	# The mercure handler must run before the PHP handler, otherwise the hub
+	# path would be routed to the front controller.
+	order mercure before php_server
+
+	{$CADDY_GLOBAL_OPTIONS}
+}
+
+{$SERVER_NAME::80} {
+	root * public
+
+	encode zstd br gzip
+
+	mercure {
+		# Anyone may subscribe to public topics. Private topics require the
+		# subscriber JWT that Symfony mints on each response.
+		anonymous
+
+		# The Symfony Mercure bundle signs the classic Mercure JWT, so the hub
+		# is asked to read that shape rather than the newer issuer based one.
+		protocol_version_compatibility 8
+
+		# Both keys are the same value as MERCURE_JWT_SECRET, because the
+		# application signs both publisher and subscriber tokens itself.
+		publisher_jwt {$MERCURE_JWT_SECRET} HS256
+		subscriber_jwt {$MERCURE_JWT_SECRET} HS256
+	}
+
+	php_server
+}

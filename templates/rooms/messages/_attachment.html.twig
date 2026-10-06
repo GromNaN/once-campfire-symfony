@@ -1,0 +1,57 @@
+{#
+    The file a message carries.
+
+    A picture is shown through its thumbnail, sized to the box the original
+    declares so the page does not jump while the picture loads, and opens in the
+    full screen viewer when it is clicked. Anything a browser can play is played
+    in place. Everything else is a row with the name of the file, a way to
+    download it and a way to share it.
+#}
+{% set width = blob.metadata.width ?? null %}
+{% set height = blob.metadata.height ?? null %}
+{% set max_width = 1200 %}
+{% set max_height = 800 %}
+{% set download_url = blob_path(blob, disposition: 'attachment') %}
+
+{% if blob.image or blob.video %}
+    {% if width and height %}
+        {% set factor = width <= max_width and height <= max_height
+            ? 1
+            : min(max_width / width, max_height / height) %}
+        {% set shown_width = width * factor %}
+        {% set shown_height = height * factor %}
+        <div class="max-inline-size center flex overflow-clip"
+             style="width: {{ shown_width / 2 }}px; aspect-ratio: {{ width }} / {{ height }};">
+    {% else %}
+        <div class="max-inline-size center overflow-clip">
+    {% endif %}
+
+    {% if blob.video %}
+        <video src="{{ blob_path(blob) }}" controls preload="none"
+               width="100%" height="100%" class="message__attachment"></video>
+    {% else %}
+        <a href="{{ blob_path(blob) }}" class="flex"
+           data-lightbox-target="image" data-action="lightbox#open" data-lightbox-url-value="{{ download_url }}">
+            <img src="{{ blob_path(blob, variant: 'thumb') }}" alt=""
+                 {%- if width and height %} width="{{ shown_width }}" height="{{ shown_height }}"{% endif %}
+                 class="message__attachment" loading="lazy">
+        </a>
+    {% endif %}
+    </div>
+{% else %}
+    <div class="flex-inline align-center gap-half">
+        <img src="{{ asset('images/common-file-text.svg') }}" alt="" width="22" height="22" class="colorize--black">
+        <span>{{ blob.filename }}</span>
+
+        <a href="{{ download_url }}" class="btn message__action-btn hide-in-ios-pwa" style="--width: auto;">
+            <img src="{{ asset('images/download.svg') }}" alt="" width="20" height="20">
+            <span class="for-screen-reader">Download {{ blob.filename }}</span>
+        </a>
+
+        <button type="button" class="btn message__action-btn" style="--width: auto;"
+                data-controller="share" data-action="share#share" data-share-value="{{ download_url }}">
+            <img src="{{ asset('images/share.svg') }}" alt="" width="20" height="20">
+            <span class="for-screen-reader">Share {{ blob.filename }}</span>
+        </button>
+    </div>
+{% endif %}

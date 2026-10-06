@@ -1,0 +1,29 @@
+{#
+    The message that tells a new account how to invite people.
+
+    It is written into the first room the account was created with, and only
+    while that room still holds a single page of messages, so it reads as the
+    start of the conversation rather than as a message someone sent.
+#}
+<div id="system_welcome" class="message message--formatted txt-align-center center">
+    <div class="message__body center">
+        <div class="message__body-content position-relative">
+            <figure class="account-logo avatar center margin-block-end txt-large">
+                <img src="{{ path('account_logo_show') }}" alt="Account logo" width="300" height="300">
+            </figure>
+
+            <div class="flex align-center gap">
+                <div class="system-welcome--translation">
+                    {{ translation_button('invite_message') }}
+                </div>
+
+                <p>
+                    <strong>Welcome to Campfire</strong><br>
+                    To invite people to chat, share the join link below.
+                </p>
+            </div>
+
+            {{ include('accounts/_invite.html.twig', { join_url: join_url(), can_administer: is_granted('CAN_ADMINISTER') }) }}
+        </div>
+    </div>
+</div>

@@ -1,0 +1,36 @@
+{#
+    One registered device.
+
+    The browser says which one it is, and the endpoint is shown so a reader can
+    tell two devices of the same browser apart.
+#}
+<li class="flex flex-column margin-none membership-item">
+    <span class="overflow-ellipsis txt-primary txt-undecorated">
+        <strong>{{ subscription.userAgent ?: 'Unknown browser' }}</strong>
+    </span>
+
+    <span class="flex align-start gap txt-small">
+        <span class="overflow-ellipsis">{{ subscription.endpoint }}</span>
+
+        <span class="flex align-center gap">
+            <form action="{{ path('push_subscription_test_notifications_create', { push_subscription_id: subscription.id }) }}" method="post">
+                <input type="hidden" name="_csrf_token" value="{{ csrf_token('push_subscription_test_notifications_create') }}">
+
+                <button type="submit" class="btn btn--reversed">
+                    <img src="{{ asset('images/notification-bell-everything.svg') }}" alt="" width="20" height="20">
+                    <span class="for-screen-reader">Send test notification</span>
+                </button>
+            </form>
+
+            <form action="{{ path('push_subscriptions_destroy', { id: subscription.id }) }}" method="post">
+                <input type="hidden" name="_method" value="DELETE">
+                <input type="hidden" name="_csrf_token" value="{{ csrf_token('push_subscriptions_destroy') }}">
+
+                <button type="submit" class="btn btn--negative">
+                    <img src="{{ asset('images/minus.svg') }}" alt="" width="20" height="20">
+                    <span class="for-screen-reader">Delete subscription</span>
+                </button>
+            </form>
+        </span>
+    </span>
+</li>

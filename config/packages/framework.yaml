@@ -1,0 +1,46 @@
+# see https://symfony.com/doc/current/reference/configuration/framework.html
+framework:
+    secret: '%env(APP_SECRET)%'
+
+    # FrankenPHP terminates the connection and forwards the real client address.
+    trusted_proxies: '%env(default::TRUSTED_PROXIES)%'
+    trusted_hosts: '%env(default::TRUSTED_HOSTS)%'
+
+    # The templates post plain HTML forms, so a put or a delete is asked for
+    # with a _method field. Only those three methods may be overridden.
+    http_method_override: true
+    allowed_http_method_override: [PUT, PATCH, DELETE]
+    handle_all_throwables: true
+
+    # The session is started only when it is read or written. Campfire keeps its
+    # own sessions table for the list of active devices, and uses the framework
+    # session to remember which one is current.
+    session:
+        name: campfire_session
+        cookie_secure: auto
+        cookie_samesite: lax
+        cookie_httponly: true
+
+    php_errors:
+        log: true
+
+    # Formats a route can declare with a _format default. The QR code route
+    # answers with an SVG document.
+    request:
+        formats:
+            svg: 'image/svg+xml'
+            # Turbo asks for this format on the requests it takes over. Without
+            # the mapping the request reads as html and the answer would be a
+            # page rather than a stream, so nothing would be appended.
+            turbo_stream: 'text/vnd.turbo-stream.html'
+
+    # Mercure delivers Turbo Streams, so the realtime layer rides on the standard
+    # Turbo client instead of a custom WebSocket implementation.
+    assets:
+        base_path: ''
+
+when@test:
+    framework:
+        test: true
+        session:
+            storage_factory_id: session.storage.factory.mock_file

@@ -1,0 +1,8 @@
+framework:
+    rate_limiter:
+        # Sign in attempts, matching the original application which allows ten
+        # attempts per address within three minutes.
+        login:
+            policy: 'sliding_window'
+            limit: 10
+            interval: '3 minutes'

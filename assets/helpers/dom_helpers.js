@@ -1,0 +1,63 @@
+// Building and moving pieces of a page.
+//
+// The message list grows at both ends: an older page is put above it and a new
+// message below. Both move what the reader is looking at, so each change is
+// made inside a scroll guard that puts the position back afterwards.
+
+export function scrollToBottom(container) {
+    container.scrollTop = container.scrollHeight
+}
+
+export function parseHTMLFragment(html) {
+    const template = document.createElement("template")
+    template.innerHTML = html
+    return template.content
+}
+
+export function insertHTMLFragment(fragment, container, top) {
+    if (top) {
+        container.prepend(fragment)
+    } else {
+        container.append(fragment)
+    }
+}
+
+export function ignoringBriefDisconnects(element, fn) {
+    requestAnimationFrame(() => {
+        if (!element.isConnected) fn()
+    })
+}
+
+export function trimChildren(count, container, top) {
+    const children = Array.from(container.children)
+    const elements = top ? children.slice(0, count) : children.slice(-count)
+
+    keepScroll(container, top, function() {
+        for (const element of elements) {
+            element.remove()
+        }
+    })
+}
+
+export async function keepScroll(container, top, fn) {
+    pauseInertiaScroll(container)
+
+    const scrollTop = container.scrollTop
+    const scrollHeight = container.scrollHeight
+
+    await fn()
+
+    if (top) {
+        container.scrollTop = scrollTop + (container.scrollHeight - scrollHeight)
+    } else {
+        container.scrollTop = scrollTop
+    }
+}
+
+function pauseInertiaScroll(container) {
+    container.style.overflow = "hidden"
+
+    requestAnimationFrame(() => {
+        container.style.overflow = ""
+    })
+}

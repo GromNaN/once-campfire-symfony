@@ -1,0 +1,11 @@
+{% if new_messages is not empty %}
+    <turbo-stream action="append" targets="messages_{{ room.id }}">
+        <template>{% for message in new_messages %}{{ include('rooms/messages/_message.html.twig', { message: message }) }}{% endfor %}</template>
+    </turbo-stream>
+{% endif %}
+
+{% for message in updated_messages %}
+    <turbo-stream action="replace" targets="message_{{ message.key }}">
+        <template>{{ include('rooms/messages/_message.html.twig', { message: message }) }}</template>
+    </turbo-stream>
+{% endfor %}

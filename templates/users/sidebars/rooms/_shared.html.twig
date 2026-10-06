@@ -1,0 +1,11 @@
+{#
+    An open or closed room in the sidebar.
+#}
+<a href="{{ path('rooms_show', { id: room.id }) }}"
+   id="room_{{ room.id }}_list"
+   class="align-center gap room btn txt-nowrap{{ unread|default(false) ? ' unread' : '' }}"
+   style="--column-gap: 0.5em"
+   data-rooms-list-target="room" data-badge-dot-target="unread" data-sorted-list-target="item"
+   data-room-id="{{ room.id }}" data-sorted-list-name="{{ room.name }}">
+    <span class="overflow-ellipsis">{{ room.name }}</span>
+</a>

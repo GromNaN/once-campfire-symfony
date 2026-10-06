@@ -1,0 +1,21 @@
+{#
+    What someone sees when they belong to no room.
+
+    There is nothing to show, so the page shows that: an empty conversation
+    list and a picture saying so. The sidebar is there, which is where a room
+    is started from.
+#}
+{% extends 'layout.html.twig' %}
+
+{% block title %}No rooms yet{% endblock %}
+
+{% block body %}
+    <div id="message-area" class="message-area">
+        <div class="message-area--empty min-width center">
+            <figure class="center pad">
+                <img src="{{ asset('images/messages-empty.svg') }}" alt="" class="colorize--black translucent">
+                <span class="for-screen-reader">{{ app.user.name }}</span>
+            </figure>
+        </div>
+    </div>
+{% endblock %}

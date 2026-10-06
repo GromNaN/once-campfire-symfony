@@ -1,0 +1,19 @@
+{#
+    A room of the profile page, with the bell that sets how much the member
+    wants to hear about it.
+#}
+<li class="flex align-center gap margin-none min-width membership-item">
+    <a href="{{ path('rooms_show', { id: membership.room.id }) }}"
+       class="overflow-ellipsis fill-shade txt-primary txt-undecorated">
+        <strong>{{ room_display_name(membership.room, membership.user) }}</strong>
+    </a>
+
+    <hr class="separator" aria-hidden="true">
+
+    <span class="txt-small">
+        <turbo-frame id="room_{{ membership.room.id }}_involvement"
+                     src="{{ path('rooms_involvement', { room_id: membership.room.id }) }}">
+            <span class="spinner"></span>
+        </turbo-frame>
+    </span>
+</li>

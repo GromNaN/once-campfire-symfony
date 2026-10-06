@@ -1,0 +1,61 @@
+security:
+    # Digests stay compatible with the original application, which uses bcrypt
+    # with the default cost of 12. A password hashed by either side verifies on
+    # the other one.
+    password_hashers:
+        App\Entity\User:
+            algorithm: bcrypt
+            cost: 12
+
+    providers:
+        app_user_provider:
+            id: App\Security\UserProvider
+
+    firewalls:
+        dev:
+            # Ensure dev tools and static assets are always allowed
+            pattern: ^/(_profiler|_wdt|assets|build)/
+            security: false
+
+        # Bots call the JSON message endpoints with a key in the URL, so they
+        # need their own firewall, matched before the browser one.
+        bot:
+            pattern: ^/rooms/\d+/\d+-[A-Za-z0-9]+/
+            stateless: true
+            provider: app_user_provider
+            custom_authenticators:
+                - App\Security\BotAuthenticator
+
+        main:
+            lazy: true
+            provider: app_user_provider
+            custom_authenticators:
+                - App\Security\SessionAuthenticator
+            entry_point: App\Security\SessionAuthenticator
+
+    # Note: Only the *first* matching rule is applied
+    access_control:
+        - { path: ^/up$, roles: PUBLIC_ACCESS }
+        # A browser reads the manifest before anyone has signed in, when it
+        # offers to install the application.
+        - { path: ^/webmanifest$, roles: PUBLIC_ACCESS }
+        - { path: ^/first_run, roles: PUBLIC_ACCESS }
+        - { path: ^/join, roles: PUBLIC_ACCESS }
+        - { path: ^/session, roles: PUBLIC_ACCESS }
+        # The sign in page shows the logo of the account before anyone is
+        # signed in, so reading it is public.
+        - { path: ^/account/logo, roles: PUBLIC_ACCESS }
+        # An uploaded file is addressed with a signed identifier, which is the
+        # only right a reader needs, exactly like the original application.
+        - { path: ^/rails/active_storage, roles: PUBLIC_ACCESS }
+        - { path: ^/rooms/\d+/\d+-[A-Za-z0-9]+/, roles: ROLE_BOT }
+        - { path: ^/, roles: ROLE_USER }
+
+when@test:
+    security:
+        password_hashers:
+            # Password hashers are resource-intensive by design to ensure security.
+            # In tests, it's safe to reduce their cost to improve performance.
+            App\Entity\User:
+                algorithm: bcrypt
+                cost: 4

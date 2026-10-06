@@ -1,0 +1,13 @@
+.git
+.ignored
+storage
+var
+vendor
+node_modules
+public/assets
+assets/vendor
+.phpunit.cache
+.phpunit.result.cache
+.env.local
+.env.*.local
+*.sqlite3

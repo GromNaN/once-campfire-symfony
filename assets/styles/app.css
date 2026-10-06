@@ -1,0 +1,37 @@
+/*
+ * The Campfire design.
+ *
+ * The stylesheets of the original application are kept as they are, one file
+ * per concern, and pulled in here in the order the original serves them. The
+ * markup of the templates follows the same class names, so the design of the
+ * original is what the pages look like.
+ *
+ * Only one thing was changed on the way in: the few url() references point at
+ * the image directory of this application.
+ */
+@import "../stylesheets/_reset.css";
+@import "../stylesheets/actiontext.css";
+@import "../stylesheets/animation.css";
+@import "../stylesheets/autocomplete.css";
+@import "../stylesheets/avatars.css";
+@import "../stylesheets/base.css";
+@import "../stylesheets/boosts.css";
+@import "../stylesheets/buttons.css";
+@import "../stylesheets/code.css";
+@import "../stylesheets/colorize.css";
+@import "../stylesheets/colors.css";
+@import "../stylesheets/composer.css";
+@import "../stylesheets/embeds.css";
+@import "../stylesheets/filters.css";
+@import "../stylesheets/flash.css";
+@import "../stylesheets/inputs.css";
+@import "../stylesheets/layout.css";
+@import "../stylesheets/lightbox.css";
+@import "../stylesheets/messages.css";
+@import "../stylesheets/nav.css";
+@import "../stylesheets/panels.css";
+@import "../stylesheets/separators.css";
+@import "../stylesheets/sidebar.css";
+@import "../stylesheets/signup.css";
+@import "../stylesheets/spinner.css";
+@import "../stylesheets/utilities.css";

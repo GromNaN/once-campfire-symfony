@@ -1,0 +1,26 @@
+{#
+    A link preview inside a message body.
+
+    The title is a link only when the address survived the check that keeps a
+    preview from pointing back at this application, and the image is only shown
+    when its address did.
+#}
+<figure class="attachment attachment--content attachment--og">
+    <actiontext-opengraph-embed>
+        <div class="og-embed gap {{ twitter_avatar ? 'og-embed--twitter-avatar' }}">
+            <div class="og-embed__content">
+                <div class="og-embed__title">
+                    {%- if href -%}
+                        <a href="{{ href }}" rel="noreferrer" target="_blank">{{ title }}</a>
+                    {%- else -%}
+                        {{ title }}
+                    {%- endif -%}
+                </div>
+                <div class="og-embed__description">{{ description }}</div>
+            </div>
+            {% if url %}
+                <div class="og-embed__image"><img src="{{ url }}" class="image center" alt=""></div>
+            {% endif %}
+        </div>
+    </actiontext-opengraph-embed>
+</figure>

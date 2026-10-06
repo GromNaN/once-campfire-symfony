@@ -1,0 +1,24 @@
+# Enable stateless CSRF protection for forms and logins/logouts
+framework:
+    form:
+        csrf_protection:
+            token_id: submit
+
+    csrf_protection:
+        # Forms built with the Form component use "submit". The others are the
+        # hand written forms that post a _csrf_token field: the browser sends
+        # them with an origin header, so they need no token kept in the session.
+        #
+        # The transfer link is the exception. Its page sends its own form as it
+        # loads, so it cannot wait for the script that writes the double-submit
+        # token of a stateless one. The token it carries is kept in the session
+        # and handed to the page by the server.
+        stateless_token_ids:
+            - submit
+            - authenticate
+            - logout
+            - room_destroy
+            - rooms_involvement
+            - user_avatar_destroy
+            - searches_clear
+            - messages_boosts_destroy

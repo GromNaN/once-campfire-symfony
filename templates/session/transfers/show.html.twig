@@ -1,0 +1,17 @@
+{#
+    The page a transfer link lands on.
+
+    There is nothing to read and nothing to fill in: the link already carries
+    the proof that it is the right person, so the form sends itself and the
+    reader arrives signed in.
+#}
+{% extends 'base.html.twig' %}
+
+{% block title %}Signing you in{% endblock %}
+
+{% block body %}
+    <form action="{{ path('session_transfer_update', { id: id }) }}" method="post" data-controller="auto-submit">
+        <input type="hidden" name="_method" value="PUT">
+        <input type="hidden" name="_csrf_token" value="{{ csrf_token('session_transfer') }}">
+    </form>
+{% endblock %}

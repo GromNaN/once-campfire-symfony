@@ -1,0 +1,13 @@
+{#
+    Avatar of a user.
+
+    The picture is layered over the initials, so a slow or missing image never
+    leaves a hole in a list. The address answers with the picture of the user
+    when they uploaded one, and with a generated one otherwise.
+#}
+{% set size = size|default(48) %}
+
+<span class="avatar avatar--{{ size }}" title="{{ user.name }}">
+    <span class="avatar__initials" aria-hidden="true">{{ user.initials }}</span>
+    <img class="avatar__image" src="{{ avatar_path(user) }}" alt="" width="{{ size }}" height="{{ size }}" loading="lazy">
+</span>

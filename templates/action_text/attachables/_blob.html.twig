@@ -1,0 +1,17 @@
+{#
+    An uploaded file embedded in a message body.
+
+    A picture is shown through the thumbnail variant, which is made on first
+    use and kept afterwards. Anything else is offered as a link, since a
+    browser cannot show it in place.
+#}
+<figure class="attachment attachment--{{ blob.image ? 'preview' : 'file' }}">
+    {% if blob.image %}
+        <img src="{{ blob_path(blob, variant: 'thumb') }}" alt="" loading="lazy"
+            {%- if blob.metadata.width is defined and blob.metadata.height is defined %} width="{{ blob.metadata.width }}" height="{{ blob.metadata.height }}"{% endif %}>
+    {% endif %}
+    <figcaption class="attachment__caption">
+        <a href="{{ blob_path(blob) }}" target="_blank" rel="noreferrer">{{ blob.filename }}</a>
+        <span class="attachment__size">{{ human_size(blob.byteSize) }}</span>
+    </figcaption>
+</figure>

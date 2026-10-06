@@ -1,0 +1,13 @@
+{#
+    A mention inside a message body.
+
+    A span rather than a div: a mention sits inside the paragraph the editor
+    produces, and a block element would make a browser split that paragraph
+    when it parses the body. The signed identifier lets the editor rebuild the
+    mention from its user when the message is edited.
+
+    The picture is a plain image and not the layered avatar: the text of a
+    mention is what a reply quotes, and the initials of the layered avatar
+    would end up in it.
+#}
+<span class="mention" sgid="{{ attachable_sgid(user) }}" data-user-id="{{ user.id }}"><img class="avatar__image" src="{{ avatar_path(user) }}" alt="" width="48" height="48" loading="lazy"> {{ user.name }}</span>

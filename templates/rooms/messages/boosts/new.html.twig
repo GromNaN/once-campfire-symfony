@@ -1,0 +1,48 @@
+{#
+    The form that adds a boost, in the place of the "Add a boost" link.
+
+    It asks for the list back rather than for itself, so the answer redraws the
+    boosts instead of the form. The escape key follows the link that leads out,
+    and the field is already focused when the form appears.
+#}
+<turbo-frame id="new_boost_{{ message.key }}">
+    <div class="boost flex-inline postion--relative max-width fill-white" style="--column-gap: var(--inline-space-half)">
+        {{ form_start(form, {
+            action: path('messages_boosts_create', { message_id: message.id }),
+            attr: {
+                class: 'boost__form flex align-center gap expanded',
+                'data-controller': 'form scroll-into-view',
+                'data-action': 'keydown.esc->form#cancel',
+                'data-turbo-frame': 'boosting_' ~ message.key,
+            },
+        }) }}
+            <label class="boost__form-label flex gap" style="--column-gap: 0.7ch;" role="button" tabindex="0" aria-label="Add a boost">
+                <figure class="avatar boost__avatar flex-item-no-shrink">
+                    <img src="{{ avatar_path(app.user) }}" alt="" width="20" height="20">
+                    <span class="for-screen-reader">{{ app.user.name }}</span>
+                </figure>
+
+                {{ form_widget(form.content, { attr: {
+                    autofocus: true,
+                    autocomplete: 'off',
+                    autocorrect: 'off',
+                    maxlength: 16,
+                    pattern: '\\S+.*',
+                    class: 'input input--boost txt-small',
+                } }) }}
+            </label>
+
+            <button type="submit" class="btn btn--reversed">
+                <img src="{{ asset('images/check.svg') }}" alt="">
+                <span class="for-screen-reader">Submit</span>
+            </button>
+
+            <a href="{{ path('messages_boosts_index', { message_id: message.id }) }}"
+               data-turbo-frame="boosting_{{ message.key }}" data-form-target="cancel"
+               class="btn btn--negative">
+                <img src="{{ asset('images/minus.svg') }}" alt="">
+                <span class="for-screen-reader">Cancel</span>
+            </a>
+        {{ form_end(form) }}
+    </div>
+</turbo-frame>

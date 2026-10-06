@@ -1,0 +1,3 @@
+<turbo-stream action="replace" targets="message_{{ message.key }}">
+    <template>{{ include('rooms/messages/_message.html.twig', { message: message }) }}</template>
+</turbo-stream>

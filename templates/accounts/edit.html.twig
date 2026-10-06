@@ -1,0 +1,139 @@
+{#
+    The account page: its name, its picture, its join link and its members.
+
+    Everything an administrator can change is in a form of its own that saves
+    the moment it is touched, so the page reads as a list of settings rather
+    than as one long form.
+#}
+{% extends 'layout.html.twig' %}
+
+{% block title %}Account settings{% endblock %}
+
+{% block nav %}
+    <div class="flex-item-justify-start">
+        {{ include('layouts/_back_link.html.twig', { url: last_room_url() }) }}
+    </div>
+
+    {% if can_administer %}
+        <div class="flex align-center gap flex-item-justify-end">
+            <a href="{{ path('account_bots_index') }}" class="btn" style="view-transition-name: chat-bots">
+                <img src="{{ asset('images/bot.svg') }}" alt="" width="20" height="20">
+                <span class="for-screen-reader">Set up chat bots</span>
+            </a>
+
+            <a href="{{ path('account_custom_styles_edit') }}" class="btn" style="view-transition-name: custom-styles">
+                <img src="{{ asset('images/art.svg') }}" alt="" width="20" height="20">
+                <span class="for-screen-reader">Custom styles</span>
+            </a>
+        </div>
+    {% endif %}
+{% endblock %}
+
+{% block body %}
+    <section class="panel txt-align-center flex flex-column gap" style="view-transition-name: account-settings">
+        {% if can_administer %}
+            {{ form_start(form, { attr: { class: 'flex flex-column gap', 'data-controller': 'form' } }) }}
+                <div class="align-center center avatar__form gap" data-controller="upload-preview">
+                    <label class="btn" for="{{ form.logo.vars.id }}">
+                        <img src="{{ asset('images/camera.svg') }}" alt="" width="20" height="20">
+                        <span class="for-screen-reader">Upload logo</span>
+                    </label>
+
+                    <label class="btn avatar input--file account-logo txt-xx-large">
+                        <img src="{{ path('account_logo_show') }}" role="presentation" width="48" height="48"
+                             data-upload-preview-target="image">
+                        {{ form_widget(form.logo, { attr: {
+                            class: 'input',
+                            'data-upload-preview-target': 'input',
+                            'data-action': 'upload-preview#previewImage change->form#submit',
+                        } }) }}
+                        <span class="for-screen-reader">Upload logo</span>
+                    </label>
+
+                    <span></span>
+                </div>
+
+                <div class="flex align-center gap">
+                    {{ translation_button('account_name') }}
+
+                    <label class="flex align-center gap flex-item-grow">
+                        {{ form_widget(form.name, { attr: {
+                            class: 'input txt-large',
+                            autocomplete: 'off',
+                            placeholder: 'Name this account',
+                            autofocus: true,
+                        } }) }}
+                    </label>
+
+                    <button type="submit" class="btn btn--reversed center">
+                        <img src="{{ asset('images/check.svg') }}" alt="" width="20" height="20">
+                        <span class="for-screen-reader">Save changes</span>
+                    </button>
+                </div>
+            {{ form_end(form) }}
+
+            {% if has_logo %}
+                <form action="{{ path('account_logo_destroy') }}" method="post" class="flex center">
+                    <input type="hidden" name="_method" value="DELETE">
+                    <input type="hidden" name="_csrf_token" value="{{ csrf_token('account_logo_destroy') }}">
+
+                    <button type="submit" class="btn btn--negative txt-small">
+                        <img src="{{ asset('images/minus.svg') }}" alt="" width="20" height="20">
+                        <span class="for-screen-reader">Delete logo</span>
+                    </button>
+                </form>
+            {% endif %}
+
+            <div class="margin-block-start pad-block pad-inline-double fill-shade border-radius">
+                {{ form_start(settings_form, { attr: { class: 'flex align-center gap center', 'data-controller': 'form' } }) }}
+                    <div class="flex-item-grow flex align-center gap txt-align-start">
+                        <img src="{{ asset('images/crown.svg') }}" class="colorize--black" alt="" width="18" height="18">
+                        Must be admin to create new rooms
+                    </div>
+
+                    <label class="switch">
+                        {{ form_widget(settings_form.restrictRoomCreationToAdministrators, {
+                            attr: { class: 'switch__input', 'data-action': 'change->form#submit' },
+                        }) }}
+                        <span class="switch__btn round"></span>
+                        <span class="for-screen-reader">Must be admin to create new rooms</span>
+                    </label>
+                {{ form_end(settings_form) }}
+            </div>
+        {% else %}
+            <figure class="account-logo avatar txt-xx-large center">
+                <img src="{{ path('account_logo_show') }}" alt="Account logo" width="300" height="300">
+            </figure>
+
+            <h1 class="flex-item-grow txt-x-large">{{ account.name }}</h1>
+        {% endif %}
+
+        <div class="margin-block pad-inline pad-block-start fill-shade border-radius">
+            {{ include('accounts/_invite.html.twig', { join_url: join_url, can_administer: can_administer }) }}
+
+            <hr class="margin-block separator full-width" style="--border-style: solid">
+
+            <menu class="flex flex-column gap margin-none pad">
+                <turbo-frame id="account_users">
+                    {% for user in administrators %}
+                        {{ include('accounts/users/_user.html.twig', { user: user, can_administer: can_administer, role_forms: role_forms }) }}
+                    {% endfor %}
+
+                    {% if administrators is not empty and members is not empty %}
+                        <hr class="separator full-width" style="--border-style: solid">
+                    {% endif %}
+
+                    {% for user in members %}
+                        {{ include('accounts/users/_user.html.twig', { user: user, can_administer: can_administer, role_forms: role_forms }) }}
+                    {% endfor %}
+                </turbo-frame>
+            </menu>
+        </div>
+    </section>
+{% endblock %}
+
+{% block footer %}
+    <div class="txt-align-center center margin-block-double txt-subtle">
+        Campfire&trade; version <span class="version-badge">{{ version_badge() }}</span>
+    </div>
+{% endblock %}

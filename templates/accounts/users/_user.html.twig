@@ -1,0 +1,58 @@
+{#
+    One member of the account.
+
+    The role is a crown that saves itself, and removing a member is a button of
+    its own. Neither is offered for the reader themselves: an administrator who
+    removed their own account would leave the installation without one.
+#}
+{% set is_self = user.id == app.user.id %}
+
+<li class="flex align-center gap margin-none{{ user.isBanned ? ' banned' : '' }}">
+    <figure class="avatar flex-item-no-shrink" style="--avatar-size: 3.75ch;">
+        <a href="{{ path('user_show', { id: user.id }) }}" title="{{ user.title }}" class="btn avatar" data-turbo-frame="_top">
+            <img src="{{ avatar_path(user) }}" alt="" width="48" height="48" loading="lazy">
+        </a>
+    </figure>
+
+    <div class="min-width">
+        <div class="overflow-ellipsis fill-shade"><strong>{{ user.name }}</strong></div>
+    </div>
+
+    <hr class="separator" aria-hidden="true">
+
+    {% if can_administer and user.isActive %}
+        {% if not user.isBot %}
+            {{ form_start(role_forms[user.id], { attr: { 'data-controller': 'form' } }) }}
+                <label class="btn txt-small flex-item-no-shrink" for="{{ role_forms[user.id].administrator.vars.id }}">
+                    <span class="for-screen-reader">Role: {{ user.isAdministrator ? 'Administrator' : 'Member' }}</span>
+                    <img src="{{ asset('images/crown.svg') }}" width="20" height="20" alt="">
+                    {{ form_widget(role_forms[user.id].administrator, { attr: {
+                        'data-action': 'form#submit',
+                        hidden: true,
+                        disabled: is_self,
+                    } }) }}
+                </label>
+            {{ form_end(role_forms[user.id]) }}
+        {% endif %}
+
+        {% if not is_self %}
+            <form action="{{ path('account_user_deactivate', { id: user.id }) }}" method="post" class="flex-item-no-shrink">
+                <input type="hidden" name="_method" value="DELETE">
+                <input type="hidden" name="_csrf_token" value="{{ csrf_token('account_user_deactivate') }}">
+
+                <button type="submit" class="btn txt-small btn--negative"
+                        data-turbo-confirm="Are you sure you want to permanently remove this person from the account? This can't be undone.">
+                    <img src="{{ asset('images/minus.svg') }}" width="20" height="20" alt="">
+                    <span class="for-screen-reader">Delete {{ user.name }}</span>
+                </button>
+            </form>
+        {% endif %}
+    {% endif %}
+
+    {% if is_self %}
+        <a href="{{ path('user_profile_show') }}" class="btn txt-small flex-item-no-shrink" target="_top">
+            <img src="{{ asset('images/pencil.svg') }}" width="20" height="20" alt="">
+            <span class="for-screen-reader">My settings</span>
+        </a>
+    {% endif %}
+</li>

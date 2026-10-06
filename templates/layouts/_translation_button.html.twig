@@ -1,0 +1,24 @@
+{#
+    The hint of a field, in every language the application speaks.
+
+    It sits beside the field as a globe that opens a list, so a reader who does
+    not read English can still tell what the field expects.
+#}
+<details class="position-relative"
+         data-controller="popup"
+         data-action="keydown.esc->popup#close toggle->popup#toggle click@document->popup#closeOnClickOutside"
+         data-popup-orientation-top-class="popup-orientation-top">
+    <summary class="btn" tabindex="-1">
+        <img src="{{ asset('images/globe.svg') }}" width="20" height="20" alt="" class="color-icon">
+        <span class="for-screen-reader">Translate</span>
+    </summary>
+
+    <div class="language-list-menu shadow" data-popup-target="menu">
+        <dl class="language-list">
+            {% for language, translation in translations %}
+                <dt>{{ language }}</dt>
+                <dd class="margin-none">{{ translation }}</dd>
+            {% endfor %}
+        </dl>
+    </div>
+</details>

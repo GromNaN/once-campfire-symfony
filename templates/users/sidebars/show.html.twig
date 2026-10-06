@@ -1,0 +1,75 @@
+{#
+    The room list.
+
+    It is served as the answer of the permanent Turbo Frame of the page, so the
+    frame is the whole document here. The lists carry the controllers that keep
+    them sorted and that put the unread dot back on a room, which the streams
+    arriving over the hub ask them to do.
+#}
+<turbo-frame id="user_sidebar" data-controller="rooms-list">
+    <div class="sidebar__container overflow-y overflow-hide-scrollbar">
+        {#
+            The block that starts a conversation. It is a frame of its own so
+            that the page that picks the people takes its place, and it takes
+            the whole page over once the conversation is started.
+        #}
+        <turbo-frame id="direct_rooms_control" target="_top">
+            <div class="directs gap overflow-x overflow-hide-scrollbar">
+                <a href="{{ path('rooms_direct_new') }}" class="direct direct__new" data-turbo-frame="_self">
+                    <span class="avatar avatar--icon">
+                        <img src="{{ asset('images/messages-add.svg') }}" alt="" width="20" height="20" class="colorize--black">
+                    </span>
+
+                    <span class="direct__author flex max-width min-width border-radius pad-inline-half">
+                        <span class="for-screen-reader">New</span>
+                        <span class="txt-small overflow-clip">Ping</span>
+                    </span>
+                </a>
+
+                <div id="direct_rooms" contents data-controller="sorted-list"
+                     data-action="rooms-list:unread@window->sorted-list#updateItem">
+                    {% for membership in direct_memberships %}
+                        {{ include('users/sidebars/rooms/_direct.html.twig', { membership: membership }) }}
+                    {% endfor %}
+                </div>
+
+                <div contents>
+                    {% for user in direct_placeholder_users %}
+                        {{ include('users/sidebars/rooms/_direct_placeholder.html.twig', { user: user }) }}
+                    {% endfor %}
+                </div>
+            </div>
+        </turbo-frame>
+
+        <div class="rooms position-relative flex flex-column gap">
+            <div id="shared_rooms" contents data-controller="sorted-list">
+                {% for membership in shared_memberships %}
+                    {{ include('users/sidebars/rooms/_shared.html.twig', { room: membership.room, unread: membership.isUnread }) }}
+                {% endfor %}
+            </div>
+
+            {% if is_granted('CAN_CREATE_ROOMS') %}
+                <a href="{{ path('rooms_open_new') }}" class="rooms__new-btn btn room align-center gap txt-reversed" aria-label="New Chat Room">
+                    <img src="{{ asset('images/add.svg') }}" alt="" width="20" height="20">
+                </a>
+            {% endif %}
+        </div>
+
+        <button type="button" class="btn sidebar__toggle" data-action="toggle-class#toggle">
+            <img src="{{ asset('images/menu.svg') }}" alt="" width="20" height="20">
+            <span class="for-screen-reader">Open menu</span>
+        </button>
+    </div>
+
+    <div class="flex align-end sidebar__tools gap justify-end">
+        <a href="{{ path('user_profile_show') }}" class="btn avatar flex-item-no-shrink sidebar__tool">
+            <img src="{{ avatar_path(app.user) }}" alt="" width="48" height="48">
+            <span class="for-screen-reader">My Settings</span>
+        </a>
+
+        <a href="{{ path('account_edit') }}" class="btn align-center gap txt-reversed sidebar__tool">
+            <img src="{{ asset('images/settings.svg') }}" alt="" width="20" height="20">
+            <span class="for-screen-reader">Account Settings</span>
+        </a>
+    </div>
+</turbo-frame>

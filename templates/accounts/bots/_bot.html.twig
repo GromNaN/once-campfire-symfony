@@ -1,0 +1,67 @@
+{#
+    One chat bot, with the commands that post into the rooms it belongs to.
+
+    A bot runs outside the application, so the addresses below are written in
+    full and the key travels in the path.
+#}
+<li class="flex flex-column gap flush fill-shade border-radius pad-block pad-inline-double">
+    <div class="flex align-center gap">
+        <figure class="avatar flex-item--no-shrink" style="--avatar-size: 2.65em;">
+            <img src="{{ avatar_path(bot) }}" alt="" width="48" height="48" loading="lazy">
+        </figure>
+
+        <div class="min-width">
+            <div class="overflow-ellipsis txt-large"><strong>{{ bot.name }}</strong></div>
+        </div>
+
+        <a href="{{ path('account_bot_edit', { id: bot.id }) }}" class="btn flex-item-justify-end"
+           style="view-transition-name: chat-bot-{{ bot.id }}">
+            <img src="{{ asset('images/pencil.svg') }}" alt="" width="20" height="20">
+            <span class="for-screen-reader">Edit {{ bot.name }}</span>
+        </a>
+    </div>
+
+    {% for command in commands %}
+        <fieldset class="gap max-width pad border border-radius">
+            <legend class="min-width txt-align-start pad-inline">
+                <strong class="overflow-ellipsis">{{ room_display_name(command.room) }}</strong>
+            </legend>
+
+            <div class="flex align-center gap">
+                <img src="{{ asset('images/messages-outlined.svg') }}" alt="" width="24" height="24" class="colorize--black">
+
+                <div class="flex-item-grow">
+                    <input type="text" class="input full-width fill-white" value="{{ command.message }}"
+                           aria-label="curl command for posting messages" readonly>
+                </div>
+
+                <div class="txt-small">
+                    <button type="button" class="btn"
+                            data-controller="clipboard" data-action="clipboard#copy"
+                            data-clipboard-value="{{ command.message }}" data-clipboard-success-class="btn--success">
+                        <img src="{{ asset('images/copy-paste.svg') }}" alt="" width="20" height="20">
+                        <span class="for-screen-reader">Copy message command</span>
+                    </button>
+                </div>
+            </div>
+
+            <div class="flex align-center gap">
+                <img src="{{ asset('images/attachment.svg') }}" alt="" width="24" height="24" class="colorize--black">
+
+                <div class="flex-item-grow">
+                    <input type="text" class="input full-width fill-white" value="{{ command.upload }}"
+                           aria-label="curl command for posting attachments" readonly>
+                </div>
+
+                <div class="txt-small">
+                    <button type="button" class="btn"
+                            data-controller="clipboard" data-action="clipboard#copy"
+                            data-clipboard-value="{{ command.upload }}" data-clipboard-success-class="btn--success">
+                        <img src="{{ asset('images/copy-paste.svg') }}" alt="" width="20" height="20">
+                        <span class="for-screen-reader">Copy attachment command</span>
+                    </button>
+                </div>
+            </div>
+        </fieldset>
+    {% endfor %}
+</li>

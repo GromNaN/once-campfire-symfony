@@ -1,0 +1,20 @@
+{#
+    The pill that stands for one picked person.
+
+    The picker copies this skeleton once per person and fills the copies in, so
+    it is never shown as it is. The places to fill are marked with data-content
+    and the value the remove button carries is marked with data-value.
+#}
+<template id="autocompletable-user">
+    <div class="autocomplete__pill max-width" data-value="" tabindex="0">
+        <img class="avatar flex-item-no-shrink" data-content="avatar" src="" alt="">
+
+        <span class="autocomplete-field__selected-value-text overflow-ellipsis flex-item-grow" data-content="label"></span>
+
+        <button type="button" data-action="user-picker#remove:prevent" data-value="" tabindex="-1"
+                class="btn btn--plain txt-small translucent flex-item-no-shrink">
+            <img src="{{ asset('images/remove-circle.svg') }}" alt="" class="colorize--black">
+            <span class="for-screen-reader">Remove <span data-content="screenReaderLabel"></span></span>
+        </button>
+    </div>
+</template>

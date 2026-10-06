@@ -1,0 +1,55 @@
+{#
+    The notification bell of a room.
+
+    A browser only delivers notifications once the reader has allowed them, so
+    the bell first asks for that: until it is answered, the button is a bell
+    that offers to turn them on. Once they are on, the frame loads and the
+    button becomes the one that sets how much the reader wants to hear about
+    this room. A reader who refuses is shown how to allow them, in the menus of
+    the browser and the system they are actually using.
+#}
+<span>
+    <span class="button_to_change_notifying"
+          data-controller="notifications"
+          data-notifications-subscriptions-url-value="{{ path('push_subscriptions_index') }}"
+          data-notifications-attention-class="btn--pulsing">
+        <turbo-frame id="room_{{ room.id }}_involvement"
+                     data-controller="turbo-frame"
+                     data-action="notifications:ready@window->turbo-frame#load"
+                     data-turbo-frame-url-param="{{ path('rooms_involvement', { room_id: room.id }) }}">
+            <button class="btn" data-action="click->notifications#attemptToSubscribe" data-notifications-target="bell">
+                <img src="{{ asset('images/notification-bell-loading.svg') }}" alt="" width="20" height="20">
+                <img src="{{ asset('images/notification-bell-alert.svg') }}" alt="" width="20" height="20" hidden>
+                <span class="for-screen-reader">Notification settings for this {{ room.direct ? 'Ping' : 'room' }}</span>
+            </button>
+        </turbo-frame>
+
+        <dialog data-notifications-target="notAllowedNotice"
+                class="dialog pad center center-block border-radius border shadow"
+                style="--inline-space: var(--block-space)">
+            <div class="flex flex-column txt-align-center">
+                <span class="btn btn--faux center txt-x-large">
+                    <img src="{{ asset('images/notification-bell-alert.svg') }}" alt="" width="48" height="48">
+                    <span class="for-screen-reader">Notifications alert</span>
+                </span>
+
+                <section>
+                    <h1 class="txt-large margin-none">Notifications aren&rsquo;t allowed</h1>
+
+                    <div class="txt-align-start margin-block-start">
+                        {{ include('pwa/_browser_settings.html.twig') }}
+                        {{ include('pwa/_system_settings.html.twig') }}
+                        {{ include('pwa/_install_instructions.html.twig') }}
+                    </div>
+                </section>
+
+                <form method="dialog" class="flex align-center gap center">
+                    <button class="btn dialog__close" autofocus="true">
+                        <span class="for-screen-reader">Close</span>
+                        <img src="{{ asset('images/remove.svg') }}" alt="" width="20" height="20">
+                    </button>
+                </form>
+            </div>
+        </dialog>
+    </span>
+</span>

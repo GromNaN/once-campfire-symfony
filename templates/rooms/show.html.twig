@@ -1,0 +1,95 @@
+{#
+    A room: its messages, the composer that writes them, and the navigation of
+    the room itself.
+
+    The message list is the element the streams of the hub append to, and the
+    composer sits in the footer of the page, which is where the stylesheets
+    pin it.
+#}
+{% extends 'layout.html.twig' %}
+
+{% set title = room_display_name(room, app.user) %}
+{% set edit_path = room.direct
+    ? path('rooms_direct_edit', { id: room.id })
+    : (room.open ? path('rooms_open_edit', { id: room.id }) : path('rooms_closed_edit', { id: room.id })) %}
+
+{% block title %}{{ title }}{% endblock %}
+
+{% block head %}
+    {# The page says which room it is, and refuses to be shown from a stale
+       copy while it is being navigated to: a room moves quickly. #}
+    <meta name="current-room-id" content="{{ room.id }}">
+    <meta name="turbo-cache-control" content="no-preview">
+{% endblock %}
+
+{% block nav %}
+    {% if account_has_logo() %}
+        <figure class="account-logo avatar">
+            <img src="{{ path('account_logo_show') }}" alt="Account logo" width="300" height="300">
+        </figure>
+    {% endif %}
+
+    <span class="btn btn--reversed btn--faux room--current">
+        <h1 class="room__contents txt-medium overflow-ellipsis">
+            {% if room.direct %}
+                <span class="for-screen-reader">Ping with</span>
+            {% endif %}
+
+            {{ title }}
+        </h1>
+    </span>
+
+    <a href="{{ edit_path }}" class="btn" style="view-transition-name: edit-room-{{ room.id }}" data-room-id="{{ room.id }}">
+        <img src="{{ asset('images/menu-dots-horizontal.svg') }}" alt="" width="20" height="20">
+        <span class="for-screen-reader">Settings for this {{ room.direct ? 'Ping' : 'room' }}</span>
+    </a>
+
+    {{ include('rooms/involvements/_bell.html.twig', { room: room }) }}
+{% endblock %}
+
+{% block body %}
+    <div id="message-area" class="message-area"
+         data-room-id="{{ room.id }}"
+         data-controller="messages presence drop-target"
+         data-action="turbo:before-stream-render@document->messages#beforeStreamRender keydown.up@document->messages#editMyLastMessage visibilitychange@document->presence#visibilityChanged drop@window->drop-target#drop dragover@window->drop-target#allow"
+         data-presence-url-value="{{ path('rooms_presence', { room_id: room.id }) }}"
+         data-messages-page-url-value="{{ path('rooms_messages_index', { room_id: room.id }) }}"
+         data-messages-user-id-value="{{ app.user.id }}"
+         data-messages-first-of-day-class="message--first-of-day"
+         data-messages-formatted-class="message--formatted"
+         data-messages-me-class="message--me"
+         data-messages-mentioned-class="message--mentioned"
+         data-messages-threaded-class="message--threaded">
+        {{ include('rooms/messages/_template.html.twig') }}
+
+        <div id="messages_{{ room.id }}" class="messages"
+             data-controller="maintain-scroll refresh-room"
+             data-action="turbo:before-stream-render@document->maintain-scroll#beforeStreamRender visibilitychange@document->refresh-room#visibilityChanged online@window->refresh-room#online"
+             data-messages-target="messages"
+             data-refresh-room-url-value="{{ path('rooms_refresh', { room_id: room.id }) }}"
+             data-refresh-room-loaded-at-value="{{ room.updatedAt|date('U') }}">
+            {% if show_invitation %}
+                {{ include('rooms/show/_invitation.html.twig') }}
+            {% endif %}
+
+            {% set previous_day = null %}
+            {% for message in messages %}
+                {{ include('rooms/messages/_message.html.twig', {
+                    message: message,
+                    first_of_day: previous_day != message.createdAt|date('Y-m-d'),
+                }) }}
+                {% set previous_day = message.createdAt|date('Y-m-d') %}
+            {% endfor %}
+        </div>
+
+        <button type="button" class="message-area__return-to-latest btn"
+                data-action="messages#returnToLatest" data-messages-target="latest" hidden>
+            <img src="{{ asset('images/arrow-down.svg') }}" alt="" width="20" height="20">
+            <span class="for-screen-reader">Jump to newest message</span>
+        </button>
+    </div>
+{% endblock %}
+
+{% block footer %}
+    {{ include('rooms/messages/_composer.html.twig', { room: room, form: composer }) }}
+{% endblock %}

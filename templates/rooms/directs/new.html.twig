@@ -1,0 +1,54 @@
+{#
+    The page that starts a conversation.
+
+    It replaces the block of the sidebar that lists conversations, so it is a
+    Turbo Frame of the same name and it takes the whole page over when it is
+    saved. The people are picked by name: the picker keeps the values it has
+    gathered in the select of the form, and shows each of them as a pill.
+#}
+<turbo-frame id="direct_rooms_control" target="_top">
+    <div class="directs directs--new flex flex-column gap">
+        {{ form_start(form, { attr: {
+            class: 'flex gap flex-item-grow',
+            'data-controller': 'form user-picker',
+            'data-action': 'keydown.esc->form#cancel',
+            'data-user-picker-url-value': path('autocompletable_users_json'),
+            'data-user-picker-self-value': app.user.id,
+        } }) }}
+            <a href="{{ path('users_sidebar') }}" class="btn flex-item-no-shrink"
+               data-turbo-frame="user_sidebar" data-form-target="cancel">
+                <img src="{{ asset('images/arrow-left.svg') }}" alt="">
+                <span class="for-screen-reader">Cancel changes</span>
+            </a>
+
+            <section class="autocomplete__container unpad input input--actor">
+                <div class="autocomplete__input input flex flex-wrap position-relative flex-item-grow">
+                    {{ form_widget(form.members, { attr: {
+                        hidden: true,
+                        'data-user-picker-target': 'select',
+                        'data-template-id': 'autocompletable-user',
+                    } }) }}
+
+                    {{ include('users/autocompletables/_template.html.twig') }}
+
+                    <input type="text" autocomplete="off" autocorrect="off" data-1p-ignore="true"
+                           class="autocomplete__input input flex flex-wrap position-relative"
+                           data-user-picker-target="input"
+                           data-action="input->user-picker#search keydown->user-picker#didPressKey">
+
+                    <suggestion-select class="autocomplete__list shadow margin-none unpad"
+                                       style="inset-block-start: 100%; inset-inline-start: 0;"
+                                       data-user-picker-target="results"
+                                       data-action="click->user-picker#pick" hidden></suggestion-select>
+                </div>
+            </section>
+
+            <button type="submit" class="btn btn--reversed flex-item-no-shrink">
+                <img src="{{ asset('images/check.svg') }}" alt="">
+                <span class="for-screen-reader">Start Ping</span>
+            </button>
+        {{ form_end(form) }}
+
+        <span class="txt-small translucent pad-inline-half center">Type names to ping someone...</span>
+    </div>
+</turbo-frame>

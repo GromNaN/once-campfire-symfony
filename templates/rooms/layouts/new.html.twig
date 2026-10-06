@@ -1,0 +1,22 @@
+{#
+    The frame the pages that create a room share: a way back in the navigation
+    and a centred panel, which the page itself fills.
+
+    A page embeds this template and fills the room_form block, so that the
+    three kinds of room keep the same frame without repeating it.
+#}
+{% extends 'layout.html.twig' %}
+
+{% block title %}{{ page_title|default('New chat room') }}{% endblock %}
+
+{% block nav %}
+    <div class="flex-item-justify-start">
+        {{ include('layouts/_back_link.html.twig', { url: last_room_url() }) }}
+    </div>
+{% endblock %}
+
+{% block main %}
+    <section class="panel txt-align-center" style="view-transition-name: {{ view_transition_name|default('new-room') }}">
+        {% block room_form %}{% endblock %}
+    </section>
+{% endblock %}

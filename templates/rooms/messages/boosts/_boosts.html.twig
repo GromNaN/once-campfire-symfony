@@ -1,0 +1,25 @@
+{#
+    The boosts of a message.
+
+    The list and the form sit in Turbo Frames of their own, so adding a boost
+    redraws the list without touching the message around it. The list carries
+    the identifier the broadcast appends to.
+#}
+<turbo-frame id="boosting_{{ message.key }}">
+    <div class="boosts flex flex-wrap align-center gap full-width" style="--column-gap: 0.4ch; --row-gap: 0">
+        <div id="boosts_{{ message.key }}" class="flex-inline flex-wrap gap" data-turbo-streaming-target="container">
+            {% for boost in message_boosts(message) %}
+                {{ include('rooms/messages/boosts/_boost.html.twig', { message: message, boost: boost }) }}
+            {% endfor %}
+        </div>
+
+        <turbo-frame id="new_boost_{{ message.key }}">
+            <div class="flex-inline message__boost-inline">
+                <a href="{{ path('messages_boosts_new', { message_id: message.id }) }}" class="boost__action txt-small btn">
+                    <img src="{{ asset('images/boost.svg') }}" alt="" width="20" height="20">
+                    <span class="for-screen-reader">Add a boost</span>
+                </a>
+            </div>
+        </turbo-frame>
+    </div>
+</turbo-frame>

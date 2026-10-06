@@ -1,0 +1,99 @@
+{#
+    A person of the account.
+
+    What the page offers depends on who is looking: anyone can start a
+    conversation with them, an administrator also sees the address of the
+    person, the link that signs them in on another device, and the button that
+    bans them or lifts their ban.
+#}
+{% extends 'layout.html.twig' %}
+
+{% block title %}{{ user.name }}{% endblock %}
+
+{% block nav %}
+    <div class="flex-item-justify-start">
+        {{ include('layouts/_back_link.html.twig') }}
+    </div>
+
+    <div class="flex align-center gap flex-item-justify-end">
+        {% if app.user.id == user.id %}
+            <a href="{{ path('user_profile_show') }}" class="btn">
+                <img src="{{ asset('images/pencil.svg') }}" alt="">
+                <span class="for-screen-reader">Edit my profile</span>
+            </a>
+        {% endif %}
+    </div>
+{% endblock %}
+
+{% block body %}
+    <section class="panel txt-align-center">
+        <div class="flex flex-column gap{{ user.isBanned ? ' banned' : '' }}">
+            <div class="avatar txt-xx-large center" style="background: white">
+                <img src="{{ avatar_path(user) }}" alt="Profile avatar" class="avatar" width="300" height="300">
+            </div>
+
+            {% if user.isBot %}
+                <div class="pad-double--inline push--inline push--block-start">
+                    {% if user.isActive %}
+                        <form action="{{ path('rooms_direct_create') }}" method="post">
+                            <input type="hidden" name="direct_room[_token]" value="{{ csrf_token('submit') }}">
+                            <input type="hidden" name="direct_room[members][]" value="{{ user.id }}">
+
+                            <button type="submit" class="btn btn--primary full-width txt--large">
+                                <img src="{{ asset('images/messages.svg') }}" alt="Ping {{ user.name }}">
+                            </button>
+                        </form>
+                    {% else %}
+                        <div>{{ user.name }} is no longer on this account</div>
+                    {% endif %}
+                </div>
+            {% else %}
+                {# A banned member is not gone: the page still shows them, and
+                   the way to lift the ban. Only a deactivated one has left. #}
+                {% if user.isDeactivated %}
+                    <div>
+                        <h1 class="txt-x-large margin-none">{{ user.name }}</h1>
+                        <div>{{ user.name }} is no longer on this account</div>
+                    </div>
+                {% else %}
+                    <div class="flex flex-column gap" style="--row-gap: calc(var(--block-space) / 3)">
+                        <h1 class="txt-x-large txt-tight-lines margin-none">{{ user.name }}</h1>
+
+                        {% if can_administer and user.emailAddress %}
+                            <div><a href="mailto:{{ user.emailAddress }}">{{ user.emailAddress }}</a></div>
+                        {% endif %}
+
+                        {% if user.bio %}
+                            <div>{{ user.bio }}</div>
+                        {% endif %}
+                    </div>
+
+                    {% if user.isActive %}
+                        <div class="pad-inline-double margin-inline margin-block-start">
+                            <form action="{{ path('rooms_direct_create') }}" method="post">
+                                <input type="hidden" name="direct_room[_token]" value="{{ csrf_token('submit') }}">
+                                <input type="hidden" name="direct_room[members][]" value="{{ user.id }}">
+
+                                <button type="submit" class="btn btn--reversed full-width txt-large">
+                                    <img src="{{ asset('images/messages.svg') }}" alt="Ping {{ user.name }}">
+                                </button>
+                            </form>
+                        </div>
+
+                        {% if can_administer %}
+                            <hr class="margin-block-start borderless">
+
+                            {{ include('users/profiles/_transfer.html.twig', { user: user }) }}
+                        {% endif %}
+                    {% endif %}
+
+                    {% if can_administer and app.user.id != user.id %}
+                        <div class="margin-block-start">
+                            {{ include('users/_ban_button.html.twig', { user: user }) }}
+                        </div>
+                    {% endif %}
+                {% endif %}
+            {% endif %}
+        </div>
+    </section>
+{% endblock %}

@@ -1,0 +1,8 @@
+{#
+    The page that edits an open room.
+#}
+{% embed 'rooms/layouts/edit.html.twig' %}
+    {% block room_form %}
+        {{ include('rooms/opens/_form.html.twig', { type_change_path: path('rooms_closed_edit', { id: room.id }) }) }}
+    {% endblock %}
+{% endembed %}

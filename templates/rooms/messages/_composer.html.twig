@@ -1,0 +1,79 @@
+{#
+    The composer writes a message.
+
+    It posts through Turbo, so the answer is a stream that appends the saved
+    message to the list rather than a page. The structure is the one the
+    stylesheets expect: the input sits in a bubble, the buttons to attach a
+    file, open the rich text toolbar and send are beside it, and the typing
+    indicator hangs above.
+#}
+<div class="composer flex align-end gap position-relative"
+     data-controller="typing-notifications"
+     data-typing-notifications-active-class="typing-indicator--active"
+     data-typing-notifications-url-value="{{ path('rooms_typing', { room_id: room.id }) }}">
+    <a href="{{ path('searches_index') }}" class="btn flex-item-no-shrink margin-block-end composer__context-btn">
+        <img src="{{ asset('images/search.svg') }}" alt="" width="20" height="20">
+        <span class="for-screen-reader">Search</span>
+    </a>
+
+    <turbo-frame id="composer-frame">
+        {{ form_start(form, {
+            action: path('rooms_messages_create', { room_id: room.id }),
+            attr: {
+                id: 'composer',
+                class: 'margin-block flex-item-grow contain',
+                'data-turbo-stream': 'true',
+                'data-controller': 'composer drop-target',
+                'data-composer-room-id-value': room.id,
+                'data-composer-messages-outlet': '#message-area',
+                'data-action': 'turbo:submit-end->composer#submitEnd',
+            },
+        }) }}
+            <fieldset contents>
+                <div class="flex flex-column">
+                    <div class="composer__filelist flex flex--align-center gap flex-wrap" data-composer-target="fileList"></div>
+
+                    <div class="flex composer__input input input--actor fill-white min-width" style="--input-border-radius: 1.3rem">
+                        <div class="flex align-end gap full-width">
+                            <img src="{{ asset('images/messages-outlined.svg') }}" alt="" width="22" height="22" class="composer__input-hint colorize--black">
+
+                            <div class="flex flex-column flex-item-grow min-width gap">
+                                {{ form_widget(form.body, {
+                                    attr: {
+                                        class: 'input',
+                                        rows: 1,
+                                        'aria-label': 'Write a message',
+                                        'data-composer-target': 'text',
+                                        'data-action': 'input->composer#saveDraft keydown->composer#submitByKeyboard',
+                                    },
+                                }) }}
+                            </div>
+
+                            <label class="btn btn--borderless txt-small flex-item-no-shrink composer__attachment-btn input--file">
+                                <img src="{{ asset('images/attachment.svg') }}" alt="" width="22" height="22" class="colorize--black">
+                                {{ form_widget(form.attachment, { attr: { multiple: 'multiple' } }) }}
+                                <span class="for-screen-reader">Attach a file</span>
+                            </label>
+
+                            <button type="button" class="btn btn--borderless txt-small flex-item-no-shrink composer__rich-text-btn">
+                                <img src="{{ asset('images/text-options.svg') }}" alt="" width="20" height="20" class="colorize--black">
+                                <span class="for-screen-reader">Rich text</span>
+                            </button>
+
+                            <button type="submit" name="send" class="btn btn--reversed flex-item-no-shrink txt-small" data-action="composer#submit">
+                                <img src="{{ asset('images/arrow-up.svg') }}" alt="" width="20" height="20">
+                                <span class="for-screen-reader">Send Message</span>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </fieldset>
+
+            <div id="typing_{{ room.id }}" class="typing-indicator gap txt-small align-center flex-inline" data-typing-notifications-target="indicator">
+                <div class="typing-indicator__author spinner" data-typing-notifications-target="author"></div>
+            </div>
+
+            {{ form_widget(form.clientMessageId, { attr: { 'data-composer-target': 'clientid' } }) }}
+        {{ form_end(form) }}
+    </turbo-frame>
+</div>

@@ -1,0 +1,29 @@
+{#
+    The button an administrator uses to ban a member, or to lift a ban.
+
+    Banning is the heavier of the two: it signs the person out, removes the
+    messages they wrote and refuses the addresses they used, so the button asks
+    before it acts.
+#}
+{% if user.isActive %}
+    <form action="{{ path('user_ban_create', { id: user.id }) }}" method="post">
+        <input type="hidden" name="_csrf_token" value="{{ csrf_token('user_ban') }}">
+
+        <button type="submit" class="btn full-width"
+                data-turbo-confirm="Are you sure you want to ban this user? This will log them out, delete their messages, and block their IP addresses.">
+            <img src="{{ asset('images/cancel.svg') }}" alt="" width="20" height="20" class="colorize--black">
+            <span>Ban {{ user.name }}</span>
+        </button>
+    </form>
+{% else %}
+    <form action="{{ path('user_ban_destroy', { id: user.id }) }}" method="post">
+        <input type="hidden" name="_method" value="DELETE">
+        <input type="hidden" name="_csrf_token" value="{{ csrf_token('user_ban') }}">
+
+        <button type="submit" class="btn btn--negative full-width"
+                data-turbo-confirm="Are you sure you want to remove the ban on this user?">
+            <img src="{{ asset('images/cancel.svg') }}" alt="" width="20" height="20" class="colorize--black">
+            <span>Remove ban</span>
+        </button>
+    </form>
+{% endif %}

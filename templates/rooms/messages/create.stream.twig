@@ -1,0 +1,3 @@
+<turbo-stream action="append" targets="messages_{{ room.id }}">
+    <template>{{ include('rooms/messages/_message.html.twig', { message: message }) }}</template>
+</turbo-stream>
