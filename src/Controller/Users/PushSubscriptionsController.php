@@ -63,6 +63,13 @@ final class PushSubscriptionsController extends AbstractController
         ]);
 
         if (null !== $existing) {
+            // An endpoint already known is kept only while it still passes the
+            // current rules. A browser that asks again with keys the rules no
+            // longer accept is told so rather than silently kept.
+            if (0 !== \count($this->validator->validate($existing))) {
+                return new Response('', Response::HTTP_UNPROCESSABLE_ENTITY);
+            }
+
             $existing->setUserAgent($request->headers->get('User-Agent'));
             $this->entityManager->flush();
 

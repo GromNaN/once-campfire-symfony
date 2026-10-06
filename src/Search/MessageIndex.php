@@ -71,10 +71,21 @@ final class MessageIndex
             return [];
         }
 
+        // The rooms the member can reach are filtered in the same query as the
+        // match, so the page holds the newest reachable matches rather than the
+        // newest matches overall. Filtering afterwards would let matches of
+        // rooms the member is not in push their own matches out of the page.
         $ids = $this->connection->fetchFirstColumn(
-            'SELECT rowid FROM message_search_index WHERE body MATCH :terms ORDER BY rowid DESC LIMIT :size',
-            ['terms' => $terms, 'size' => $size],
-            ['terms' => ParameterType::STRING, 'size' => ParameterType::INTEGER],
+            'SELECT rowid FROM message_search_index
+             WHERE body MATCH :terms
+             AND rowid IN (
+                 SELECT message.id FROM messages message
+                 INNER JOIN memberships membership ON membership.room_id = message.room_id
+                 WHERE membership.user_id = :userId
+             )
+             ORDER BY rowid DESC LIMIT :size',
+            ['terms' => $terms, 'size' => $size, 'userId' => (int) $user->getId()],
+            ['terms' => ParameterType::STRING, 'size' => ParameterType::INTEGER, 'userId' => ParameterType::INTEGER],
         );
 
         if ([] === $ids) {

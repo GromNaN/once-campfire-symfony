@@ -9,8 +9,10 @@ use App\Entity\Room;
 use App\Entity\User;
 use App\Form\Data\MessageData;
 use App\Form\MessageType;
+use App\Http\Attribute\MapRoom;
 use App\Http\LastRoom;
 use App\Message\MessageBody;
+use App\Message\RemoveMessage;
 use App\Repository\MessageRepository;
 use App\Repository\RoomRepository;
 use App\Security\Voter\AdministerVoter;
@@ -18,11 +20,11 @@ use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Cookie;
 use Symfony\Component\HttpFoundation\RedirectResponse;
-use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Attribute\Route;
 use Symfony\Component\Security\Http\Attribute\CurrentUser;
 use Symfony\Component\Security\Http\Attribute\IsCsrfTokenValid;
+use Symfony\Component\Security\Http\Attribute\IsGranted;
 
 final class RoomsController extends AbstractController
 {
@@ -31,6 +33,7 @@ final class RoomsController extends AbstractController
         private readonly MessageRepository $messages,
         private readonly MessageBody $body,
         private readonly EntityManagerInterface $entityManager,
+        private readonly RemoveMessage $removeMessage,
     ) {
     }
 
@@ -83,15 +86,17 @@ final class RoomsController extends AbstractController
 
     #[Route('/rooms/{id}', name: 'rooms_destroy', methods: ['DELETE'], requirements: ['id' => '\d+'])]
     #[IsCsrfTokenValid('room_destroy', tokenKey: '_csrf_token')]
-    public function destroy(Request $request, int $id, #[CurrentUser] User $user): Response
+    #[IsGranted(AdministerVoter::CAN_ADMINISTER, subject: 'room')]
+    public function destroy(#[MapRoom] Room $room): Response
     {
-        $room = $this->rooms->findForUser($id, $user);
-
-        if (null === $room) {
-            return new Response('', Response::HTTP_NOT_FOUND);
+        // The messages go away with the room, but their bodies and their files
+        // live in other tables and on disk, so they are removed one by one the
+        // same way a single message is, rather than left behind by the cascade.
+        foreach ($room->getMessages()->toArray() as $message) {
+            $this->removeMessage->remove($message);
         }
 
-        $this->denyAccessUnlessGranted(AdministerVoter::CAN_ADMINISTER, $room);
+        $room->getMessages()->clear();
 
         $this->entityManager->remove($room);
         $this->entityManager->flush();

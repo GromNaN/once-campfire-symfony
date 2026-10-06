@@ -10,9 +10,11 @@ use App\Entity\User;
 use App\Entity\Webhook;
 use App\Message\MessageBody;
 use App\Message\MessageFiles;
+use App\Message\SendPushNotification;
 use App\Mercure\RoomBroadcast;
 use App\Search\MessageIndex;
 use Doctrine\ORM\EntityManagerInterface;
+use Symfony\Component\Messenger\MessageBusInterface;
 use Symfony\Component\Mime\MimeTypesInterface;
 use Symfony\Component\Routing\Generator\UrlGeneratorInterface;
 use Symfony\Contracts\HttpClient\Exception\TimeoutExceptionInterface;
@@ -54,6 +56,7 @@ final class WebhookDelivery
         private readonly MessageIndex $index,
         private readonly RoomBroadcast $broadcast,
         private readonly EntityManagerInterface $entityManager,
+        private readonly MessageBusInterface $bus,
         private readonly UrlGeneratorInterface $urlGenerator,
         private readonly MimeTypesInterface $mimeTypes,
     ) {
@@ -72,6 +75,10 @@ final class WebhookDelivery
             $response = $this->client->request('POST', $url, [
                 'json' => $this->payload($webhook, $message, $bot),
                 'timeout' => self::ENDPOINT_TIMEOUT,
+                // The original application calls the endpoint once and reads the
+                // answer as it comes: a redirect is not followed, it is a code
+                // that is not 200 and nothing is posted back.
+                'max_redirects' => 0,
             ]);
 
             $status = $response->getStatusCode();
@@ -91,7 +98,19 @@ final class WebhookDelivery
             return;
         }
 
-        $contents = $this->readBody($response);
+        // The body is read outside the call above, so a timeout that happens
+        // while the answer is being read is caught here rather than left to fail
+        // the job: the bot is told it was too slow, as it is when it never
+        // answers at all.
+        try {
+            $contents = $this->readBody($response);
+        } catch (TimeoutExceptionInterface) {
+            $this->reply($webhook, $message, sprintf('Failed to respond within %d seconds', self::ENDPOINT_TIMEOUT));
+
+            return;
+        } catch (TransportExceptionInterface) {
+            return;
+        }
 
         if (null !== $contentType && \in_array($contentType, self::TEXT_CONTENT_TYPES, true)) {
             $this->reply($webhook, $message, $contents);
@@ -199,8 +218,15 @@ final class WebhookDelivery
 
     private function publish(Message $reply): void
     {
+        // A reply is a message like any other: it counts as activity in the room
+        // and it notifies the readers who are away, exactly as a message posted
+        // through the composer does.
+        $reply->getRoom()?->touch();
+        $this->entityManager->flush();
+
         $this->index->index($reply);
         $this->broadcast->messageCreated($reply);
+        $this->bus->dispatch(new SendPushNotification((int) $reply->getId()));
     }
 
     /**

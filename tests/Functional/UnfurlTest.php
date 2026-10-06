@@ -119,7 +119,7 @@ final class UnfurlTest extends DatabaseTestCase
         self::assertResponseStatusCodeSame(204);
     }
 
-    public function testAPictureThatIsNotAPictureHasNoPreview(): void
+    public function testAPictureThatIsNotAPictureIsLeftOutOfThePreview(): void
     {
         $this->runFirstRun();
         $this->mockHttp([
@@ -133,9 +133,15 @@ final class UnfurlTest extends DatabaseTestCase
             'HEAD http://93.184.216.34/pic.svg' => $this->file('image/svg+xml'),
         ]);
 
-        $this->client->request('POST', '/unfurl_link', [], [], ['CONTENT_TYPE' => 'application/json'], json_encode(['url' => self::PAGE]));
+        $preview = $this->json('POST', '/unfurl_link', ['url' => self::PAGE]);
 
-        self::assertResponseStatusCodeSame(204);
+        self::assertResponseIsSuccessful();
+        self::assertSame([
+            'title' => 'A title',
+            'url' => self::PAGE,
+            'image' => null,
+            'description' => 'A description',
+        ], $preview);
     }
 
     public function testTheLastTagOfAPageWins(): void

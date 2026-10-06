@@ -6,8 +6,10 @@ framework:
             async:
                 dsn: '%env(MESSENGER_TRANSPORT_DSN)%'
                 retry_strategy:
-                    max_retries: 3
-                    multiplier: 2
+                    # The original application runs its jobs through Resque,
+                    # which makes a single attempt: a delivery that fails is not
+                    # tried again, it is left as it is.
+                    max_retries: 0
             failed: 'doctrine://default?queue_name=failed'
 
         default_bus: messenger.bus.default

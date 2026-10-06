@@ -260,6 +260,27 @@ final class PushTest extends DatabaseTestCase
         self::assertCount(1, $this->entityManager()->getRepository(PushSubscription::class)->findAll());
     }
 
+    public function testReRegisteringADeviceStoredBeforeTheRulesIsRefused(): void
+    {
+        $this->runFirstRun();
+
+        // A device that was stored before the endpoint rules existed, kept
+        // alive by a browser that asks again: the rules of today decide, so the
+        // row is not touched and the browser is told.
+        $this->subscribe($this->findUser('alice@example.com'), 'https://attacker.example.com/steal');
+
+        $this->client->request('POST', '/users/me/push_subscriptions', [], [], [
+            'CONTENT_TYPE' => 'application/json',
+        ], json_encode([
+            'endpoint' => 'https://attacker.example.com/steal',
+            'p256dh_key' => self::P256DH,
+            'auth_key' => self::AUTH,
+        ], \JSON_THROW_ON_ERROR));
+
+        self::assertResponseStatusCodeSame(422);
+        self::assertCount(1, $this->entityManager()->getRepository(PushSubscription::class)->findAll());
+    }
+
     public function testAnEndpointThatIsNotAPushServiceIsRefused(): void
     {
         $this->runFirstRun();

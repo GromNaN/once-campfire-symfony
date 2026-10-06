@@ -64,13 +64,10 @@ final class Metadata
 
         $title = self::text($attributes['title'] ?? '');
         $description = self::text($attributes['description'] ?? '');
+        // A picture the page shows but that cannot be reached, or that is not of
+        // a type a preview may draw, is left out rather than losing the whole
+        // preview: the title and the description are still worth showing.
         $image = self::image($fetcher, $attributes['image'] ?? '');
-
-        if (null === $image && '' !== ($attributes['image'] ?? '')) {
-            // The page showed a picture that cannot be reached. The original
-            // application refuses the whole preview in that case.
-            return null;
-        }
 
         if ('' === $title || '' === $description) {
             return null;

@@ -11,6 +11,7 @@ use App\Entity\Room;
 use App\Entity\Search;
 use App\Entity\User;
 use App\Form\Data\RegistrationData;
+use App\Message\MessageWriter;
 use App\Repository\SearchRepository;
 use App\Service\AccountSetup;
 
@@ -72,6 +73,31 @@ final class SearchTest extends DatabaseTestCase
 
         self::assertResponseIsSuccessful();
         self::assertSelectorNotExists('#search-results .message');
+    }
+
+    public function testMatchesOfRoomsTheMemberIsNotInDoNotFillThePage(): void
+    {
+        $this->runFirstRun();
+        $alice = $this->findUser('alice@example.com');
+        $bob = $this->addMember('Bob', 'bob@example.com');
+        $writer = static::getContainer()->get(MessageWriter::class);
+
+        // The match of the member is the oldest one, so a page taken from the
+        // newest matches overall would hold only the matches of the room the
+        // member is not in and leave them with nothing.
+        $writer->create($this->openRoom(), $alice, 'paragliding with Alice');
+
+        $secret = $this->createClosedRoom('Secret', $bob);
+
+        for ($index = 0; $index <= Message::PAGE_SIZE; ++$index) {
+            $writer->create($secret, $bob, 'paragliding with Bob '.$index);
+        }
+
+        $this->client->request('GET', '/searches?q=paragliding');
+
+        self::assertResponseIsSuccessful();
+        self::assertSelectorExists('#search-results .message');
+        self::assertStringContainsString('paragliding with Alice', (string) $this->client->getResponse()->getContent());
     }
 
     public function testAnEditedMessageIsFoundByItsNewTextOnly(): void

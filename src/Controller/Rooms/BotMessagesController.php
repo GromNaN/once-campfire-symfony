@@ -8,6 +8,7 @@ use App\Bot\MessagePayload;
 use App\Entity\Message;
 use App\Entity\Room;
 use App\Entity\User;
+use App\Http\Attribute\MapRoomMessage;
 use App\Message\MessagePage;
 use App\Message\MessageWriter;
 use App\Message\RemoveMessage;
@@ -22,6 +23,7 @@ use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Attribute\Route;
 use Symfony\Component\Routing\Generator\UrlGeneratorInterface;
 use Symfony\Component\Security\Http\Attribute\CurrentUser;
+use Symfony\Component\Security\Http\Attribute\IsGranted;
 
 /**
  * The messages of a room, read and written by a bot.
@@ -99,30 +101,17 @@ final class BotMessagesController extends AbstractController
     }
 
     #[Route('/rooms/{room_id}/{bot_key}/messages/{id}', name: 'room_bot_messages_show', methods: ['GET'], requirements: self::REQUIREMENTS + ['id' => '\d+'])]
-    public function show(int $room_id, string $bot_key, int $id, #[CurrentUser] User $bot): Response
+    #[IsGranted(ViewMessageVoter::CAN_VIEW, subject: 'message', statusCode: Response::HTTP_NOT_FOUND)]
+    public function show(#[MapRoomMessage] Message $message): Response
     {
-        $message = $this->findMessage($room_id, $id, $bot);
-
-        if (null === $message) {
-            return new Response('', Response::HTTP_NOT_FOUND);
-        }
-
-        $this->denyAccessUnlessGranted(ViewMessageVoter::CAN_VIEW, $message);
-
         return new JsonResponse($this->payload->message($message));
     }
 
     #[Route('/rooms/{room_id}/{bot_key}/messages/{id}', name: 'room_bot_messages_update', methods: ['PUT', 'PATCH'], requirements: self::REQUIREMENTS + ['id' => '\d+'])]
-    public function update(Request $request, int $room_id, string $bot_key, int $id, #[CurrentUser] User $bot): Response
+    #[IsGranted(ViewMessageVoter::CAN_VIEW, subject: 'message', statusCode: Response::HTTP_NOT_FOUND)]
+    #[IsGranted(AdministerVoter::CAN_ADMINISTER, subject: 'message')]
+    public function update(Request $request, #[MapRoomMessage] Message $message): Response
     {
-        $message = $this->findMessage($room_id, $id, $bot);
-
-        if (null === $message) {
-            return new Response('', Response::HTTP_NOT_FOUND);
-        }
-
-        $this->denyAccessUnlessGranted(AdministerVoter::CAN_ADMINISTER, $message);
-
         $attachment = $request->files->get('attachment');
         $this->writer->update($message, null === $attachment ? $request->getContent() : null, $attachment);
 
@@ -130,29 +119,13 @@ final class BotMessagesController extends AbstractController
     }
 
     #[Route('/rooms/{room_id}/{bot_key}/messages/{id}', name: 'room_bot_messages_destroy', methods: ['DELETE'], requirements: self::REQUIREMENTS + ['id' => '\d+'])]
-    public function destroy(int $room_id, string $bot_key, int $id, #[CurrentUser] User $bot): Response
+    #[IsGranted(ViewMessageVoter::CAN_VIEW, subject: 'message', statusCode: Response::HTTP_NOT_FOUND)]
+    #[IsGranted(AdministerVoter::CAN_ADMINISTER, subject: 'message')]
+    public function destroy(#[MapRoomMessage] Message $message): Response
     {
-        $message = $this->findMessage($room_id, $id, $bot);
-
-        if (null === $message) {
-            return new Response('', Response::HTTP_NOT_FOUND);
-        }
-
-        $this->denyAccessUnlessGranted(AdministerVoter::CAN_ADMINISTER, $message);
         $this->removeMessage->remove($message);
 
         return new Response('', Response::HTTP_NO_CONTENT);
-    }
-
-    /**
-     * The message the address points at, when the bot is a member of the room
-     * it belongs to. A bot that is not in the room sees nothing at all.
-     */
-    private function findMessage(int $room_id, int $id, User $bot): ?Message
-    {
-        $room = $this->rooms->findForUser($room_id, $bot);
-
-        return null === $room ? null : $this->messages->findInRoom($room, $id);
     }
 
     /**

@@ -5,9 +5,11 @@ declare(strict_types=1);
 namespace App\Controller\Rooms;
 
 use App\Entity\ClosedRoom;
+use App\Entity\Room;
 use App\Entity\User;
 use App\Form\Data\RoomData;
 use App\Form\RoomType;
+use App\Http\Attribute\MapRoom;
 use App\Repository\RoomRepository;
 use App\Repository\UserRepository;
 use App\Security\Voter\AdministerVoter;
@@ -90,16 +92,9 @@ final class ClosedRoomsController extends AbstractRoomController
     }
 
     #[Route('/rooms/closeds/{id}', name: 'rooms_closed_update', methods: ['PUT', 'PATCH'], requirements: ['id' => '\d+'])]
-    public function update(Request $request, int $id, #[CurrentUser] User $user): Response
+    #[IsGranted(AdministerVoter::CAN_ADMINISTER, subject: 'room')]
+    public function update(Request $request, #[MapRoom(includeDirect: false)] Room $room): Response
     {
-        $room = $this->roomOf($id, $user);
-
-        if (null === $room) {
-            return $this->roomNotFound();
-        }
-
-        $this->denyAccessUnlessGranted(AdministerVoter::CAN_ADMINISTER, $room);
-
         $form = $this->createForm(RoomType::class, $data = $this->roomData($room), $this->formOptions('rooms_closed_update', $room, 'PUT'));
         $form->handleRequest($request);
 

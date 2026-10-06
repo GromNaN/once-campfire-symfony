@@ -9,6 +9,7 @@ use App\Entity\Message;
 use App\Entity\User;
 use App\Form\Data\MessageData;
 use App\Form\MessageType;
+use App\Http\Attribute\MapRoomMessage;
 use App\Http\TurboStream;
 use App\Message\MessagePage;
 use App\Message\MessageWriter;
@@ -16,7 +17,6 @@ use App\Message\RemoveMessage;
 use App\Repository\RoomRepository;
 use App\Security\Voter\AdministerVoter;
 use App\Security\Voter\ViewMessageVoter;
-use Symfony\Bridge\Doctrine\Attribute\MapEntity;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
@@ -95,7 +95,7 @@ final class MessagesController extends AbstractController
 
     #[Route('/rooms/{room_id}/messages/{id}', name: 'rooms_messages_show', methods: ['GET'], requirements: ['room_id' => '\d+', 'id' => '\d+'])]
     #[IsGranted(ViewMessageVoter::CAN_VIEW, subject: 'message', statusCode: Response::HTTP_NOT_FOUND)]
-    public function show(#[MapEntity(mapping: ['room_id' => 'room', 'id' => 'id'])] Message $message): Response
+    public function show(#[MapRoomMessage] Message $message): Response
     {
         return $this->render('rooms/messages/show.html.twig', [
             'room' => $message->getRoom(),
@@ -106,7 +106,7 @@ final class MessagesController extends AbstractController
     #[Route('/rooms/{room_id}/messages/{id}/edit', name: 'rooms_messages_edit', methods: ['GET'], requirements: ['room_id' => '\d+', 'id' => '\d+'])]
     #[IsGranted(ViewMessageVoter::CAN_VIEW, subject: 'message', statusCode: Response::HTTP_NOT_FOUND)]
     #[IsGranted(AdministerVoter::CAN_ADMINISTER, subject: 'message')]
-    public function edit(#[MapEntity(mapping: ['room_id' => 'room', 'id' => 'id'])] Message $message): Response
+    public function edit(#[MapRoomMessage] Message $message): Response
     {
         $data = new MessageData();
         $data->body = $this->richTexts->bodyFor((int) $message->getId());
@@ -123,7 +123,7 @@ final class MessagesController extends AbstractController
     #[Route('/rooms/{room_id}/messages/{id}', name: 'rooms_messages_update', methods: ['PUT', 'PATCH'], requirements: ['room_id' => '\d+', 'id' => '\d+'])]
     #[IsGranted(ViewMessageVoter::CAN_VIEW, subject: 'message', statusCode: Response::HTTP_NOT_FOUND)]
     #[IsGranted(AdministerVoter::CAN_ADMINISTER, subject: 'message')]
-    public function update(Request $request, #[MapEntity(mapping: ['room_id' => 'room', 'id' => 'id'])] Message $message): Response
+    public function update(Request $request, #[MapRoomMessage] Message $message): Response
     {
         $form = $this->createForm(MessageType::class, $data = new MessageData(), ['method' => 'PUT']);
         $form->handleRequest($request);
@@ -147,7 +147,7 @@ final class MessagesController extends AbstractController
     #[Route('/rooms/{room_id}/messages/{id}', name: 'rooms_messages_destroy', methods: ['DELETE'], requirements: ['room_id' => '\d+', 'id' => '\d+'])]
     #[IsGranted(ViewMessageVoter::CAN_VIEW, subject: 'message', statusCode: Response::HTTP_NOT_FOUND)]
     #[IsGranted(AdministerVoter::CAN_ADMINISTER, subject: 'message')]
-    public function destroy(Request $request, #[MapEntity(mapping: ['room_id' => 'room', 'id' => 'id'])] Message $message): Response
+    public function destroy(Request $request, #[MapRoomMessage] Message $message): Response
     {
         $room = $message->getRoom();
         $this->removeMessage->remove($message);

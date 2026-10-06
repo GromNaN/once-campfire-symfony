@@ -7,6 +7,7 @@ namespace App\Tests\Functional;
 use App\Entity\Account;
 use App\Entity\ClosedRoom;
 use App\Entity\DirectRoom;
+use App\Entity\Enum\UserRole;
 use App\Entity\Message;
 use App\Entity\OpenRoom;
 use App\Entity\Room;
@@ -14,6 +15,7 @@ use App\Entity\User;
 use App\Form\Data\RegistrationData;
 use App\Message\MessageWriter;
 use App\Service\AccountSetup;
+use App\Service\RoomManager;
 use Symfony\Component\DomCrawler\Crawler;
 use Symfony\Component\DomCrawler\Form;
 
@@ -206,6 +208,28 @@ final class RoomsTest extends DatabaseTestCase
         self::assertNull($this->findRoom($room->getId()));
     }
 
+    public function testDeletingARoomTakesItsMessagesAndTheirBodiesWithIt(): void
+    {
+        $this->runFirstRun();
+        $room = $this->openRoom();
+
+        $writer = static::getContainer()->get(MessageWriter::class);
+        $writer->create($room, $this->findUser('alice@example.com'), 'A message with a body');
+
+        $connection = $this->connection();
+        self::assertSame(1, (int) $connection->fetchOne('SELECT COUNT(*) FROM messages'));
+        self::assertSame(1, (int) $connection->fetchOne('SELECT COUNT(*) FROM action_text_rich_texts'));
+
+        $crawler = $this->client->request('GET', '/rooms/opens/'.$room->getId().'/edit');
+        self::assertResponseIsSuccessful();
+        $this->client->submit($crawler->filter('form[action="/rooms/'.$room->getId().'"]')->form());
+
+        self::assertResponseRedirects('/');
+        self::assertSame(0, (int) $connection->fetchOne('SELECT COUNT(*) FROM messages'));
+        self::assertSame(0, (int) $connection->fetchOne('SELECT COUNT(*) FROM action_text_rich_texts'));
+        self::assertSame(0, (int) $connection->fetchOne('SELECT COUNT(*) FROM message_search_index'));
+    }
+
     public function testAConversationIsNotReachableAsARoom(): void
     {
         $this->runFirstRun();
@@ -221,6 +245,38 @@ final class RoomsTest extends DatabaseTestCase
 
         $this->client->request('GET', '/rooms/closeds/'.$room->getId().'/edit');
         self::assertResponseRedirects('/');
+
+        // Saving is not where a conversation is reached either, and the address
+        // of a room the reader is not in is answered as a room that does not
+        // exist rather than as one they may not change.
+        $this->client->request('PUT', '/rooms/opens/'.$room->getId());
+        self::assertResponseStatusCodeSame(404);
+
+        $this->client->request('PUT', '/rooms/closeds/'.$room->getId());
+        self::assertResponseStatusCodeSame(404);
+    }
+
+    public function testAnAdministratorOutsideARoomCannotReachItsSettings(): void
+    {
+        $this->runFirstRun();
+        $alice = $this->findUser('alice@example.com');
+        $bob = $this->addMember('Bob', 'bob@example.com');
+
+        // A closed room Bob owns, which Alice is not a member of.
+        $room = new ClosedRoom();
+        $room->setName('Salaries');
+        $room->setCreator($bob);
+        static::getContainer()->get(RoomManager::class)->createFor($room, [$bob]);
+
+        // Alice administers the account, and is still not a member of the room,
+        // so the room stays out of reach of the page that would change it.
+        $alice->setRole(UserRole::Administrator);
+        $this->entityManager()->flush();
+
+        $this->client->request('PUT', '/rooms/closeds/'.$room->getId());
+        self::assertResponseStatusCodeSame(404);
+
+        self::assertSame('Salaries', $this->findRoom($room->getId())?->getName());
     }
 
     public function testTheFirstRoomWelcomesTheReaderWithTheWayToInvitePeople(): void
