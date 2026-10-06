@@ -19,9 +19,13 @@ use Symfony\Component\DependencyInjection\Attribute\Autowire;
  * not, so a fresh checkout has none of them. An entry the file already has is
  * kept as it is: replacing a secret that is already in use would sign every
  * session and every link out.
+ *
+ * The command is invokable: __invoke takes the input and the output, and the
+ * container wires it from the AsCommand attribute, so there is no base class
+ * to extend.
  */
 #[AsCommand(name: 'campfire:generate-secrets', description: 'Generate the missing secrets in .env.local')]
-final class GenerateSecretsCommand extends Command
+final class GenerateSecretsCommand
 {
     /**
      * The secrets held as a random hexadecimal string, and the number of random
@@ -36,10 +40,9 @@ final class GenerateSecretsCommand extends Command
         #[Autowire('%kernel.project_dir%/.env.local')]
         private readonly string $file,
     ) {
-        parent::__construct();
     }
 
-    protected function execute(InputInterface $input, OutputInterface $output): int
+    public function __invoke(InputInterface $input, OutputInterface $output): int
     {
         $io = new SymfonyStyle($input, $output);
         $file = $this->file;

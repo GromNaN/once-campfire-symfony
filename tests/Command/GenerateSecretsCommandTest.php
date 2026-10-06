@@ -6,6 +6,7 @@ namespace App\Tests\Command;
 
 use App\Command\GenerateSecretsCommand;
 use PHPUnit\Framework\TestCase;
+use Symfony\Component\Console\Application;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Tester\CommandTester;
 
@@ -87,7 +88,13 @@ final class GenerateSecretsCommandTest extends TestCase
 
     private function executeCommand(): CommandTester
     {
-        $tester = new CommandTester(new GenerateSecretsCommand($this->file));
+        // The command is invokable rather than a Command subclass, so it is
+        // handed to an application the way the container hands it: the
+        // application reads its name from the AsCommand attribute and wraps it.
+        $command = (new Application())->addCommand(new GenerateSecretsCommand($this->file));
+        self::assertNotNull($command);
+
+        $tester = new CommandTester($command);
         $tester->execute([]);
 
         return $tester;
