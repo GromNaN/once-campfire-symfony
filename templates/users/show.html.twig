@@ -35,8 +35,12 @@
             {% if user.isBot %}
                 <div class="pad-double--inline push--inline push--block-start">
                     {% if user.isActive %}
+                        {# The data-controller attribute marks the token field
+                           for the CSRF script, which replaces the placeholder
+                           with a real token. A hand written field without it
+                           is left untouched and the post is refused. #}
                         <form action="{{ path('rooms_direct_create') }}" method="post">
-                            <input type="hidden" name="direct_room[_token]" value="{{ csrf_token('submit') }}">
+                            <input type="hidden" name="direct_room[_token]" data-controller="csrf-protection" value="{{ csrf_token('submit') }}">
                             <input type="hidden" name="direct_room[members][]" value="{{ user.id }}">
 
                             <button type="submit" class="btn btn--primary full-width txt--large">
@@ -71,7 +75,7 @@
                     {% if user.isActive %}
                         <div class="pad-inline-double margin-inline margin-block-start">
                             <form action="{{ path('rooms_direct_create') }}" method="post">
-                                <input type="hidden" name="direct_room[_token]" value="{{ csrf_token('submit') }}">
+                                <input type="hidden" name="direct_room[_token]" data-controller="csrf-protection" value="{{ csrf_token('submit') }}">
                                 <input type="hidden" name="direct_room[members][]" value="{{ user.id }}">
 
                                 <button type="submit" class="btn btn--reversed full-width txt-large">

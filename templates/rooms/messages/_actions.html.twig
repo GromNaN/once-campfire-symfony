@@ -26,8 +26,12 @@
                         {# The quick boosts post the same form as the boost
                            dialog, so they carry the token of that form. It is
                            a stateless token, which is what lets a message
-                           broadcast to another reader still carry it. #}
-                        <input type="hidden" name="boost[_token]" value="{{ csrf_token('submit') }}">
+                           broadcast to another reader still carry it. The
+                           data-controller attribute is the mark the CSRF
+                           script looks for to replace the placeholder with a
+                           real token; without it the field stays as it is and
+                           the server refuses the post. #}
+                        <input type="hidden" name="boost[_token]" data-controller="csrf-protection" value="{{ csrf_token('submit') }}">
                         <input type="hidden" name="boost[content]" value="{{ character }}">
 
                         <button type="submit" class="btn message__action-btn" title="{{ title }}" data-emoji="{{ character }}">

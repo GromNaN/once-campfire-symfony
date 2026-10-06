@@ -7,10 +7,14 @@ namespace App\Tests\Functional;
 use App\ActionText\SignedId;
 use App\Entity\Enum\MembershipInvolvement;
 use App\Entity\Membership;
+use App\Entity\Message;
 use App\Entity\OpenRoom;
 use App\Entity\Room;
 use App\Entity\User;
+use App\Form\Data\RegistrationData;
+use App\Service\AccountSetup;
 use Symfony\Component\BrowserKit\Cookie;
+use Symfony\Component\DomCrawler\Crawler;
 
 /**
  * The forms that are written by hand rather than built with the Form component
@@ -185,6 +189,57 @@ final class CsrfProtectionTest extends DatabaseTestCase
         self::assertResponseIsSuccessful();
     }
 
+    /**
+     * The script that turns the placeholder into a real token looks the field
+     * up by its data-controller attribute, or by the name _csrf_token. A hand
+     * written field named something[_token] with neither is invisible to it:
+     * the placeholder goes out as it is and the stateless protection refuses
+     * the post once the session has seen a double-submit token.
+     */
+    public function testTheQuickBoostFormsAreMarkedForTheTokenScript(): void
+    {
+        $this->runFirstRun();
+        $room = $this->openRoom();
+        $this->postMessage($room, 'First post');
+
+        $crawler = $this->client->request('GET', '/rooms/'.$room->getId());
+        self::assertResponseIsSuccessful();
+
+        $this->assertTokenFieldsAreMarkedForTheTokenScript($crawler);
+        self::assertGreaterThan(0, $crawler->filter('.quick-boosts input[name="boost[_token]"]')->count());
+    }
+
+    public function testThePingFormOfAProfileIsMarkedForTheTokenScript(): void
+    {
+        $this->runFirstRun();
+        $bob = $this->addMember('Bob', 'bob@example.com');
+
+        $crawler = $this->client->request('GET', '/users/'.$bob->getId());
+        self::assertResponseIsSuccessful();
+
+        $this->assertTokenFieldsAreMarkedForTheTokenScript($crawler);
+        self::assertGreaterThan(0, $crawler->filter('input[name="direct_room[_token]"]')->count());
+    }
+
+    private function assertTokenFieldsAreMarkedForTheTokenScript(Crawler $crawler): void
+    {
+        // A field is either named _csrf_token, which the script finds by name,
+        // or it is a form field named something[_token], which it only finds
+        // by the data-controller mark.
+        $fields = $crawler->filter('input[name="_csrf_token"], input[name$="[_token]"]');
+        self::assertGreaterThan(0, $fields->count());
+
+        foreach ($fields as $field) {
+            $name = $field->getAttribute('name');
+            $mark = $field->getAttribute('data-controller');
+
+            self::assertTrue(
+                '_csrf_token' === $name || 'csrf-protection' === $mark,
+                sprintf('The token field "%s" is not marked for the CSRF script.', $name),
+            );
+        }
+    }
+
     private function openRoom(): OpenRoom
     {
         $room = $this->entityManager()->getRepository(OpenRoom::class)->findOneBy([]);
@@ -207,5 +262,39 @@ final class CsrfProtectionTest extends DatabaseTestCase
     private function currentUser(): User
     {
         return $this->findUser('alice@example.com');
+    }
+
+    /**
+     * Posts a message through the composer, so the room page holds the actions
+     * the quick boosts live in.
+     */
+    private function postMessage(Room $room, string $body): Message
+    {
+        $crawler = $this->client->request('GET', '/rooms/'.$room->getId());
+        $this->client->submit($crawler->selectButton('Send')->form([
+            'message[body]' => $body,
+        ]), [], ['HTTP_ACCEPT' => 'text/vnd.turbo-stream.html']);
+
+        self::assertResponseIsSuccessful();
+
+        $message = $this->entityManager()->getRepository(Message::class)->findOneBy(
+            ['room' => $room],
+            ['id' => 'DESC'],
+        );
+        self::assertNotNull($message);
+
+        return $message;
+    }
+
+    private function addMember(string $name, string $emailAddress): User
+    {
+        $data = new RegistrationData();
+        $data->name = $name;
+        $data->emailAddress = $emailAddress;
+        $data->password = 'correct horse battery';
+
+        static::getContainer()->get(AccountSetup::class)->createMember($data);
+
+        return $this->findUser($emailAddress);
     }
 }
