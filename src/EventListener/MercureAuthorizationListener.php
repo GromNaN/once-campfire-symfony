@@ -7,6 +7,7 @@ namespace App\EventListener;
 use App\Entity\User;
 use App\Mercure\SubscriberTopics;
 use Symfony\Bundle\SecurityBundle\Security;
+use Symfony\Component\DependencyInjection\Attribute\Target;
 use Symfony\Component\EventDispatcher\Attribute\AsEventListener;
 use Symfony\Component\HttpFoundation\Cookie;
 use Symfony\Component\HttpKernel\Event\ResponseEvent;
@@ -26,8 +27,15 @@ use Symfony\Component\Mercure\Jwt\TokenFactoryInterface;
 #[AsEventListener(event: ResponseEvent::class, priority: -20)]
 final class MercureAuthorizationListener
 {
+    /**
+     * The token factory is the one of the default hub, which the Mercure bundle
+     * names "defaultFactory". The name is given to the container rather than
+     * left to the argument, which only reached it by a name the container
+     * matched by accident.
+     */
     public function __construct(
-        private readonly TokenFactoryInterface $defaultFactory,
+        #[Target('defaultFactory')]
+        private readonly TokenFactoryInterface $tokenFactory,
         private readonly HubInterface $hub,
         private readonly Security $security,
         private readonly SubscriberTopics $topics,
@@ -47,7 +55,7 @@ final class MercureAuthorizationListener
         }
 
         $request = $event->getRequest();
-        $token = $this->defaultFactory->create([
+        $token = $this->tokenFactory->create([
             new Grant([Grant::ACTION_SUBSCRIBE], $this->topics->forUser($user)),
         ]);
 

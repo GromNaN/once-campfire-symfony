@@ -8,6 +8,7 @@ use App\Entity\ActionTextRichText;
 use App\Repository\ActionTextRichTextRepository;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Component\DependencyInjection\Attribute\AutoconfigureTag;
+use Symfony\Component\DependencyInjection\Attribute\Target;
 use Symfony\Component\HtmlSanitizer\HtmlSanitizerInterface;
 use Symfony\Contracts\Service\ResetInterface;
 
@@ -38,16 +39,17 @@ final class RichTextRepository implements ResetInterface
     private array $cache = [];
 
     /**
-     * The sanitizer is the one configured under the name "campfire", which is
-     * what the argument name asks for. The name has to be exactly the name of
-     * the sanitizer: with anything appended, the container falls back to the
-     * default sanitizer, which knows neither the attachment element nor the
-     * classes a message body carries.
+     * The sanitizer is the one configured under the name "campfire". The name
+     * is given to the container rather than left to the argument, which only
+     * reached it by a name the container matched by accident: with anything
+     * appended it falls back to the default sanitizer, which knows neither the
+     * attachment element nor the classes a message body carries.
      */
     public function __construct(
         private readonly EntityManagerInterface $entityManager,
         private readonly ActionTextRichTextRepository $richTexts,
-        private readonly HtmlSanitizerInterface $campfire,
+        #[Target('campfire')]
+        private readonly HtmlSanitizerInterface $sanitizer,
     ) {
     }
 
@@ -128,7 +130,7 @@ final class RichTextRepository implements ResetInterface
             ->setRecordType($recordType)
             ->setRecordId($recordId)
             ->setName(self::BODY_NAME)
-            ->setBody($this->campfire->sanitize($html));
+            ->setBody($this->sanitizer->sanitize($html));
 
         $this->entityManager->persist($richText);
         $this->entityManager->flush();
